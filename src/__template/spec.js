@@ -1,10 +1,35 @@
-import solution from '.';
+import solve from '.';
 
-const day = __filename.match(/\/([^/]+)\/spec/)[1];
 const title = '';
 
-describe(`Day ${day} - ${title}`, () => {
-  test('test case', () => {
-    expect(true).toEqual(true);
+describe(`Day ${__filename.match(/\/([^/]+)\/spec/)[1]} - ${title}`, () => {
+  describe('Part 1', () => {
+    describe('Tests', () => {
+      test('test case', () => {
+        expect(true).toEqual(true);
+      });
+    });
+
+    describe('Solution', () => {
+      // const solution = solve();
+      // test(solution, () => {
+      //   expect(true).toEqual(true);
+      // });
+    });
+  });
+
+  describe('Part 2', () => {
+    describe('Tests', () => {
+      test('test case', () => {
+        expect(true).toEqual(true);
+      });
+    });
+
+    describe('Solution', () => {
+      // const solution = solve();
+      // test(solution, () => {
+      //   expect(true).toEqual(true);
+      // });
+    });
   });
 });
