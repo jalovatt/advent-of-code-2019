@@ -4,7 +4,7 @@ module.exports = {
   ],
   testPathIgnorePatterns: [
     '/node_modules/',
-    // '/__template/',
+    '/__template/',
   ],
   transform: {
     '^.+\\.js$': '<rootDir>/babel-transform.js',
