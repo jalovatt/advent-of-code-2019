@@ -1,9 +1,9 @@
 import loadText from '../../utilities/loadText';
-import { run, solve } from '.';
+import Intcode from '.';
 
 const title = '1202 Program Alarm';
 
-const input = loadText('input-1.txt').split(',');
+const input = loadText('input-1.txt');
 
 const tests = [
   ['1,9,10,3,2,3,11,0,99,30,40,50', '3500,9,10,70,2,3,11,0,99,30,40,50'],
@@ -17,12 +17,14 @@ describe(`Day ${__filename.match(/\/([^/]+)\/spec/)[1]} - ${title}`, () => {
   describe('Part 1', () => {
     describe('Tests', () => {
       test.each(tests)('%p => %p', (given, expected) => {
-        expect(run(given.split(','))).toEqual(expected);
+        const computer = new Intcode(given);
+        expect(computer.execute().readState()).toEqual(expected);
       });
     });
 
     describe('Solution', () => {
-      const solution = solve(input);
+      const computer = new Intcode(input);
+      const solution = computer.execute(12, 2).readOutput();
 
       test(`${solution}`, () => {
         expect(solution).toEqual(3716250);
@@ -30,20 +32,13 @@ describe(`Day ${__filename.match(/\/([^/]+)\/spec/)[1]} - ${title}`, () => {
     });
   });
 
-  xdescribe('Part 2', () => {
-    describe('Tests', () => {
-      test.each([
-        [1, 2],
-      ])('%p => %p', (given, expected) => {
-        expect(helper(given)).toEqual(expected);
-      });
-    });
-
-    xdescribe('Solution', () => {
-      const solution = solver(input);
+  describe('Part 2', () => {
+    describe('Solution', () => {
+      const computer = new Intcode(input);
+      const solution = computer.findValuesFor(19690720);
 
       test(`${solution}`, () => {
-        expect(solution).toEqual(true);
+        expect(solution).toEqual(6472);
       });
     });
   });

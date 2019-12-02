@@ -1,42 +1,61 @@
 const opCodes = {
-  1: (a, b) => a + b,
-  2: (a, b) => a * b,
+  1: [(a, b) => a + b, 4],
+  2: [(a, b) => a * b, 4],
+  99: [],
 };
 
-export const run = (programIn) => {
-  const program = programIn.map(v => parseInt(v, 10));
-  let cursor = 0;
-
-  // eslint-disable-next-line no-constant-condition
-  while (true) {
-    const op = opCodes[program[cursor]];
-
-    if (!op) { break; }
-
-    const posA = program[cursor + 1];
-    const posB = program[cursor + 2];
-    const writeTo = program[cursor + 3];
-
-    const a = program[posA];
-    const b = program[posB];
-
-    const val = op(a, b);
-
-    program[writeTo] = val;
-
-    cursor += 4;
+class Intcode {
+  constructor(program) {
+    this.initialState = program.split(',').map(v => parseInt(v, 10));
+    this.state = [...this.initialState];
   }
 
-  return program.join(',');
-};
+  execute = (noun, verb) => {
+    this.state = [...this.initialState];
 
-export const solve = (programIn) => {
-  const program = [...programIn];
+    if (noun !== undefined) { this.state[1] = noun; }
+    if (verb !== undefined) { this.state[2] = verb; }
 
-  program[1] = 12;
-  program[2] = 2;
+    let cursor = 0;
 
-  const final = run(program);
+    // eslint-disable-next-line no-constant-condition
+    while (true) {
+      const [op, step] = opCodes[this.state[cursor]];
 
-  return final.split(',')[0];
-};
+      if (!op) { break; }
+
+      const posA = this.state[cursor + 1];
+      const posB = this.state[cursor + 2];
+      const writeTo = this.state[cursor + 3];
+
+      const a = this.state[posA];
+      const b = this.state[posB];
+
+      const val = op(a, b);
+
+      this.state[writeTo] = val;
+
+      cursor += step;
+    }
+
+    return this;
+  };
+
+  findValuesFor = (val) => {
+    for (let noun = 0; noun < 100; noun += 1) {
+      for (let verb = 0; verb < 100; verb += 1) {
+        const got = this.execute(noun, verb).readOutput();
+
+        if (got === val) { return (noun * 100 + verb); }
+      }
+    }
+
+    return null;
+  };
+
+  readState = () => this.state.join(',');
+
+  readOutput = () => parseInt(this.state[0], 10);
+}
+
+export default Intcode;
