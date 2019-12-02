@@ -8,6 +8,5 @@ export default (fn) => {
 
   return fs.readFileSync(path.resolve(callingPath, fn))
     .toString('utf-8')
-    .split('\n')
-    .slice(0, -1);
+    .trim();
 };

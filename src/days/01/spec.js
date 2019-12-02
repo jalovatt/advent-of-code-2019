@@ -1,9 +1,9 @@
-import arrayFromTxt from '../../utilities/arrayFromTxt';
+import loadText from '../../utilities/loadText';
 import { fuelForModule, fuelForModuleCumulative, totalFuelStatic, totalFuelCumulative } from '.';
 
 const title = 'The Tyranny of the Rocket Equation';
 
-const input = arrayFromTxt('input-1.txt');
+const input = loadText('input-1.txt').split('\n');
 
 describe(`Day ${__filename.match(/\/([^/]+)\/spec/)[1]} - ${title}`, () => {
   describe('Part 1', () => {
