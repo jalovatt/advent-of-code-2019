@@ -3,7 +3,7 @@ import { fuelForModule, fuelForModuleCumulative, totalFuelStatic, totalFuelCumul
 
 const title = 'The Tyranny of the Rocket Equation';
 
-const input = loadText('input-1.txt').split('\n');
+const input = loadText('input.txt').split('\n');
 
 describe(`Day ${__filename.match(/\/([^/]+)\/spec/)[1]} - ${title}`, () => {
   describe('Part 1', () => {

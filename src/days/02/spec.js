@@ -3,7 +3,7 @@ import Intcode from '.';
 
 const title = '1202 Program Alarm';
 
-const input = loadText('input-1.txt');
+const input = loadText('input.txt');
 
 const tests = [
   ['1,9,10,3,2,3,11,0,99,30,40,50', '3500,9,10,70,2,3,11,0,99,30,40,50'],

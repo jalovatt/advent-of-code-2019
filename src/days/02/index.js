@@ -55,7 +55,7 @@ class Intcode {
 
   readState = () => this.state.join(',');
 
-  readOutput = () => parseInt(this.state[0], 10);
+  readOutput = () => this.state[0];
 }
 
 export default Intcode;
