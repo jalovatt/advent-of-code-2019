@@ -1,9 +1,9 @@
-import arrayFromTxt from '../../utilities/arrayFromTxt';
+import loadText from '../../utilities/loadText';
 import { helper, solver } from '.';
 
 const title = '';
 
-const input = arrayFromTxt('input-1.txt');
+const input = loadText('input-1.txt');
 
 describe(`Day ${__filename.match(/\/([^/]+)\/spec/)[1]} - ${title}`, () => {
   describe('Part 1', () => {
