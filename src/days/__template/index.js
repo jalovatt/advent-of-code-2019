@@ -1,3 +1,1 @@
-export const helper = () => {};
-
-export const solver = () => {};
+export const solve = () => {};

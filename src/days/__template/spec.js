@@ -1,9 +1,9 @@
 import loadText from '../../utilities/loadText';
-import { helper, solver } from '.';
+import { solve } from '.';
 
 const title = '';
 
-const input = loadText('input-1.txt');
+const input = loadText('input.txt');
 
 describe(`Day ${__filename.match(/\/([^/]+)\/spec/)[1]} - ${title}`, () => {
   describe('Part 1', () => {
@@ -11,12 +11,12 @@ describe(`Day ${__filename.match(/\/([^/]+)\/spec/)[1]} - ${title}`, () => {
       test.each([
         [1, 2],
       ])('%p => %p', (given, expected) => {
-        expect(helper(given)).toEqual(expected);
+        expect(solve(given)).toEqual(expected);
       });
     });
 
     xdescribe('Solution', () => {
-      const solution = solver(input);
+      const solution = solve(input);
 
       test(`${solution}`, () => {
         expect(solution).toEqual(true);
@@ -29,12 +29,12 @@ describe(`Day ${__filename.match(/\/([^/]+)\/spec/)[1]} - ${title}`, () => {
       test.each([
         [1, 2],
       ])('%p => %p', (given, expected) => {
-        expect(helper(given)).toEqual(expected);
+        expect(solve(given)).toEqual(expected);
       });
     });
 
     xdescribe('Solution', () => {
-      const solution = solver(input);
+      const solution = solve(input);
 
       test(`${solution}`, () => {
         expect(solution).toEqual(true);
