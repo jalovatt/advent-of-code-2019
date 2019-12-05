@@ -51,14 +51,14 @@ describe(`Day ${__filename.match(/\/([^/]+)\/spec/)[1]} - ${title}`, () => {
       });
     });
 
-    describe('Solution', () => {
-      const computer = new IntCode(input);
-      const solution = computer.execute(null, null, 1).lastOutput;
+    // describe('Solution', () => {
+    //   const computer = new IntCode(input);
+    //   const solution = computer.execute(null, null, 1).lastOutput;
 
-      test(`${solution}`, () => {
-        expect(solution).toEqual(7259358);
-      });
-    });
+    //   test(`${solution}`, () => {
+    //     expect(solution).toEqual(7259358);
+    //   });
+    // });
   });
 
   describe('Part 2', () => {
@@ -74,22 +74,59 @@ describe(`Day ${__filename.match(/\/([^/]+)\/spec/)[1]} - ${title}`, () => {
       });
     });
 
-    xdescribe('Tests (opcode 8)', () => {
+    describe('Tests (opcodes 7 + 8)', () => {
       test.each([
         [{ program: '3,9,8,9,10,9,4,9,99,-1,8', input: 8 }, 1],
         [{ program: '3,9,8,9,10,9,4,9,99,-1,8', input: 5 }, 0],
+        [{ program: '3,9,7,9,10,9,4,9,99,-1,8', input: 5 }, 1],
+        [{ program: '3,9,7,9,10,9,4,9,99,-1,8', input: 9 }, 0],
+        [{ program: '3,3,1108,-1,8,3,4,3,99', input: 8 }, 1],
+        [{ program: '3,3,1108,-1,8,3,4,3,99', input: 5 }, 0],
+        [{ program: '3,3,1107,-1,8,3,4,3,99', input: 5 }, 1],
+        [{ program: '3,3,1107,-1,8,3,4,3,99', input: 9 }, 0],
       ])('%p => %p', (given, expected) => {
         const computer = new IntCode(given.program);
-        expect(computer.execute(null, null, given.input).readState()).toEqual(expected);
+        const output = computer.execute(null, null, given.input).lastOutput;
+
+        expect(output).toEqual(expected);
+      });
+
+      const larger = '3,21,1008,21,8,20,1005,20,22,107,8,21,20,1006,20,31,1106,0,36,98,0,0,1002,21,125,20,4,20,1105,1,46,104,999,1105,1,46,1101,1000,1,20,4,20,1105,1,46,98,99'
+      describe('larger => 999', () => {
+        test.each([1, 3, 5, 7])('%p => 999', (given) => {
+          const computer = new IntCode(larger);
+          const output = computer.execute(null, null, given).lastOutput;
+
+          expect(output).toEqual(999);
+        });
+      });
+
+      describe('larger => 1000', () => {
+        test.each([8])('%p => 1000', (given) => {
+          const computer = new IntCode(larger);
+          const output = computer.execute(null, null, given).lastOutput;
+
+          expect(output).toEqual(1000);
+        });
+      });
+
+      describe('larger => 1001', () => {
+        test.each([9, 15, 20, 51])('%p => 1001', (given) => {
+          const computer = new IntCode(larger);
+          const output = computer.execute(null, null, given).lastOutput;
+
+          expect(output).toEqual(1001);
+        });
       });
     });
 
-    // describe('Solution', () => {
-    //   const solution = solve(input);
+    describe('Solution', () => {
+      const computer = new IntCode(input);
+      const solution = computer.execute(null, null, 5).lastOutput;
 
-    //   test(`${solution}`, () => {
-    //     expect(solution).toEqual(true);
-    //   });
-    // });
+      test(`${solution}`, () => {
+        expect(solution).toEqual(11826654);
+      });
+    });
   });
 });

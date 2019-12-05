@@ -84,6 +84,30 @@ class Intcode {
       },
       3,
     ],
+    7: [
+      (cursor, input, mode1, mode2) => {
+        const a = this.readByMode(cursor + 1, mode1);
+        const b = this.readByMode(cursor + 2, mode2);
+
+        const val = (a < b) ? 1 : 0;
+
+        const writeTo = this.state[cursor + 3];
+        this.state[writeTo] = val;
+      },
+      4,
+    ],
+    8: [
+      (cursor, input, mode1, mode2) => {
+        const a = this.readByMode(cursor + 1, mode1);
+        const b = this.readByMode(cursor + 2, mode2);
+
+        const val = (a === b) ? 1 : 0;
+
+        const writeTo = this.state[cursor + 3];
+        this.state[writeTo] = val;
+      },
+      4,
+    ],
     99: [],
   };
 
