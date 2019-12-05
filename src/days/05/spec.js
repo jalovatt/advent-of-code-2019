@@ -32,16 +32,6 @@ describe(`Day ${__filename.match(/\/([^/]+)\/spec/)[1]} - ${title}`, () => {
       });
     });
 
-    describe('Tests (opcode 4)', () => {
-      const program = '3,0,4,0,99';
-      const inputs = [[4, 4], [1, 1], [3, 3], [8, 8]];
-
-      test.each(inputs)('%p should return %p', (given, expected) => {
-        const computer = new IntCode(program);
-        expect(computer.execute(null, null, given).lastOutput).toEqual(expected);
-      });
-    });
-
     describe('Tests (mode switching)', () => {
       const tests = [['1002,4,3,4,33', '1002,4,3,4,99']];
 
