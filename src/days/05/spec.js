@@ -51,14 +51,14 @@ describe(`Day ${__filename.match(/\/([^/]+)\/spec/)[1]} - ${title}`, () => {
       });
     });
 
-    // describe('Solution', () => {
-    //   const computer = new IntCode(input);
-    //   const solution = computer.execute(null, null, 1).lastOutput;
+    describe('Solution', () => {
+      const computer = new IntCode(input);
+      const solution = computer.execute(null, null, 1).lastOutput;
 
-    //   test(`${solution}`, () => {
-    //     expect(solution).toEqual(7259358);
-    //   });
-    // });
+      test(`${solution}`, () => {
+        expect(solution).toEqual(7259358);
+      });
+    });
   });
 
   describe('Part 2', () => {
