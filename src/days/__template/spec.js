@@ -15,13 +15,13 @@ describe(`Day ${__filename.match(/\/([^/]+)\/spec/)[1]} - ${title}`, () => {
       });
     });
 
-    xdescribe('Solution', () => {
-      const solution = solve(input);
+    // describe('Solution', () => {
+    //   const solution = solve(input);
 
-      test(`${solution}`, () => {
-        expect(solution).toEqual(true);
-      });
-    });
+    //   test(`${solution}`, () => {
+    //     expect(solution).toEqual(true);
+    //   });
+    // });
   });
 
   xdescribe('Part 2', () => {
@@ -33,12 +33,12 @@ describe(`Day ${__filename.match(/\/([^/]+)\/spec/)[1]} - ${title}`, () => {
       });
     });
 
-    xdescribe('Solution', () => {
-      const solution = solve(input);
+    // describe('Solution', () => {
+    //   const solution = solve(input);
 
-      test(`${solution}`, () => {
-        expect(solution).toEqual(true);
-      });
-    });
+    //   test(`${solution}`, () => {
+    //     expect(solution).toEqual(true);
+    //   });
+    // });
   });
 });
