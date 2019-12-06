@@ -1,14 +1,15 @@
-class Body {
+// eslint-disable-next-line max-classes-per-file
+class Node {
   constructor(name) {
     this.name = name;
     this.children = [];
   }
 
-  countChildOrbits = (distance = 0) => {
-    return distance + this.children.length + this.children.reduce((acc, child) => {
-      return acc + child.countChildOrbits(distance + 1);
-    }, 0);
-  }
+  countTotalDescendants = (distance = 0) => (
+    distance + this.children.length + this.children.reduce((acc, child) => (
+      acc + child.countTotalDescendants(distance + 1)
+    ), 0)
+  );
 
   getAncestors = () => {
     const ancestors = new Map();
@@ -37,33 +38,61 @@ class Body {
 
     return [];
   }
+
+  findDistanceTo = (other) => {
+    const ancestorsMap = this.getAncestors();
+    const [lca, otherDistanceToLca] = other.findLca(ancestorsMap);
+
+    return ancestorsMap.get(lca) + otherDistanceToLca;
+  }
 }
 
-const generateBodies = mapStr => mapStr.split('\n').reduce((acc, line) => {
-  const [inner, outer] = line.split(')');
+class Tree {
+  constructor(rootKey) {
+    this.rootKey = rootKey;
+    this.nodes = {};
+  }
 
-  if (!acc[inner]) { acc[inner] = new Body(inner); }
-  if (!acc[outer]) { acc[outer] = new Body(outer); }
+  addRelationship = (parent, child) => {
+    if (!this.nodes[parent]) { this.nodes[parent] = new Node(parent); }
+    if (!this.nodes[child]) { this.nodes[child] = new Node(child); }
 
-  acc[outer].parent = acc[inner];
-  acc[inner].children.push(acc[outer]);
+    this.nodes[child].parent = this.nodes[parent];
+    this.nodes[parent].children.push(this.nodes[child]);
+  };
+
+  // Not sure why the extra math here is required
+  countTotalDescendants = () => (
+    this.nodes[this.rootKey].countTotalDescendants() - Object.keys(this.nodes).length + 1
+  );
+
+  distanceBetween = (a, b) => {
+    const nodeA = this.nodes[a];
+    const nodeB = this.nodes[b];
+
+    if (!nodeA) { throw new Error(`Node "${a}" does not exist in this tree`); }
+    if (!nodeB) { throw new Error(`Node "${b}" does not exist in this tree`); }
+
+    return nodeA.findDistanceTo(nodeB);
+  }
+}
+
+const treeFromMapStr = mapStr => mapStr.split('\n').reduce((acc, line) => {
+  const [parent, child] = line.split(')');
+
+  acc.addRelationship(parent, child);
 
   return acc;
-}, {});
+}, new Tree('COM'));
 
-// eslint-disable-next-line import/prefer-default-export
 export const countOrbits = (mapStr) => {
-  const bodies = generateBodies(mapStr);
+  const bodies = treeFromMapStr(mapStr);
 
-  // Genuinely don't know why this extra work is required
-  return bodies.COM.countChildOrbits() - Object.keys(bodies).length + 1;
+  return bodies.countTotalDescendants();
 };
 
 export const distanceToSanta = (mapStr) => {
-  const bodies = generateBodies(mapStr);
+  const bodies = treeFromMapStr(mapStr);
 
-  const myAncestors = bodies.YOU.getAncestors();
-  const [lca, santaDistance] = bodies.SAN.findLca(myAncestors);
-
-  return myAncestors.get(lca) + santaDistance - 2; // -2 since it's not dist = me -> santa
+  return bodies.distanceBetween('YOU', 'SAN') - 2; // -2 since we only need to orbit the same parent
 };
