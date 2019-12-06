@@ -22,7 +22,7 @@ class Intcode {
     }
   }
 
-  opCodes = {
+  operations = {
     1: [
       (cursor, input, mode1, mode2) => {
         const a = this.readByMode(cursor + 1, mode1);
@@ -67,9 +67,7 @@ class Intcode {
         const a = this.readByMode(cursor + 1, mode1);
         const b = this.readByMode(cursor + 2, mode2);
 
-        if (a) {
-          return { nextAt: b };
-        }
+        if (a) { return { nextAt: b }; }
       },
       3,
     ],
@@ -78,9 +76,7 @@ class Intcode {
         const a = this.readByMode(cursor + 1, mode1);
         const b = this.readByMode(cursor + 2, mode2);
 
-        if (a === 0) {
-          return { nextAt: b };
-        }
+        if (a === 0) { return { nextAt: b }; }
       },
       3,
     ],
@@ -129,7 +125,7 @@ class Intcode {
 
       const [mode3, mode2, mode1, code] = parsed;
 
-      const foundOpCode = this.opCodes[code];
+      const foundOpCode = this.operations[code];
       if (!foundOpCode) { throw new Error(`Invalid opCode @ ${cursor}: ${this.state[cursor]}`); }
 
       const [op, step] = foundOpCode;
