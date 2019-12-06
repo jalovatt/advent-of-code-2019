@@ -1,5 +1,5 @@
 import loadText from '../../utilities/loadText';
-import { countOrbits } from '.';
+import { countOrbits, distanceToSanta } from '.';
 
 const title = 'Universal Orbit Map';
 
@@ -24,21 +24,21 @@ describe(`Day ${__filename.match(/\/([^/]+)\/spec/)[1]} - ${title}`, () => {
     });
   });
 
-  xdescribe('Part 2', () => {
+  describe('Part 2', () => {
     describe('Tests', () => {
       test.each([
-        [1, 2],
+        ['COM)B\nB)C\nC)D\nD)E\nE)F\nB)G\nG)H\nD)I\nE)J\nJ)K\nK)L\nK)YOU\nI)SAN', 4],
       ])('%p => %p', (given, expected) => {
-        expect(solve(given)).toEqual(expected);
+        expect(distanceToSanta(given)).toEqual(expected);
       });
     });
 
-    // describe('Solution', () => {
-    //   const solution = solve(input);
+    describe('Solution', () => {
+      const solution = distanceToSanta(input);
 
-    //   test(`${solution}`, () => {
-    //     expect(solution).toEqual(true);
-    //   });
-    // });
+      test(`${solution}`, () => {
+        expect(solution).toEqual(397);
+      });
+    });
   });
 });
