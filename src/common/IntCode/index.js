@@ -26,93 +26,82 @@ class IntCode {
   }
 
   operations = {
-    1: [
-      (mode1, mode2) => {
-        const a = this.readByMode(this.cursor + 1, mode1);
-        const b = this.readByMode(this.cursor + 2, mode2);
-        const writeTo = this.state[this.cursor + 3];
+    1: (mode1, mode2) => {
+      const a = this.readByMode(this.cursor + 1, mode1);
+      const b = this.readByMode(this.cursor + 2, mode2);
+      const writeTo = this.state[this.cursor + 3];
 
-        const val = a + b;
+      const val = a + b;
 
-        this.state[writeTo] = val;
-      },
-      4,
-    ],
-    2: [
-      (mode1, mode2) => {
-        const a = this.readByMode(this.cursor + 1, mode1);
-        const b = this.readByMode(this.cursor + 2, mode2);
-        const writeTo = this.state[this.cursor + 3];
+      this.state[writeTo] = val;
 
-        const val = a * b;
+      return { step: 4 };
+    },
+    2: (mode1, mode2) => {
+      const a = this.readByMode(this.cursor + 1, mode1);
+      const b = this.readByMode(this.cursor + 2, mode2);
+      const writeTo = this.state[this.cursor + 3];
 
-        this.state[writeTo] = val;
-      },
-      4,
-    ],
-    3: [
-      () => {
-        if (!this.inputs.length) { throw new Error('Couldn\'t get an input value'); }
+      const val = a * b;
 
-        const writeTo = this.state[this.cursor + 1];
-        this.state[writeTo] = this.inputs.shift();
-      },
-      2,
-    ],
-    4: [
-      (mode1) => {
-        const val = this.readByMode(this.cursor + 1, mode1);
+      this.state[writeTo] = val;
 
-        return { output: val };
-      },
-      2,
-    ],
-    5: [
-      // eslint-disable-next-line consistent-return
-      (mode1, mode2) => {
-        const a = this.readByMode(this.cursor + 1, mode1);
-        const b = this.readByMode(this.cursor + 2, mode2);
+      return { step: 4 };
+    },
+    3: () => {
+      if (!this.inputs.length) { throw new Error('Couldn\'t get an input value'); }
 
-        if (a) { return { nextAt: b }; }
-      },
-      3,
-    ],
-    6: [
-      // eslint-disable-next-line consistent-return
-      (mode1, mode2) => {
-        const a = this.readByMode(this.cursor + 1, mode1);
-        const b = this.readByMode(this.cursor + 2, mode2);
+      const writeTo = this.state[this.cursor + 1];
+      this.state[writeTo] = this.inputs.shift();
 
-        if (a === 0) { return { nextAt: b }; }
-      },
-      3,
-    ],
-    7: [
-      (mode1, mode2) => {
-        const a = this.readByMode(this.cursor + 1, mode1);
-        const b = this.readByMode(this.cursor + 2, mode2);
+      return { step: 2 };
+    },
+    4: (mode1) => {
+      const val = this.readByMode(this.cursor + 1, mode1);
 
-        const val = (a < b) ? 1 : 0;
+      return { output: val, step: 2 };
+    },
+    5: (mode1, mode2) => {
+      const a = this.readByMode(this.cursor + 1, mode1);
+      const b = this.readByMode(this.cursor + 2, mode2);
 
-        const writeTo = this.state[this.cursor + 3];
-        this.state[writeTo] = val;
-      },
-      4,
-    ],
-    8: [
-      (mode1, mode2) => {
-        const a = this.readByMode(this.cursor + 1, mode1);
-        const b = this.readByMode(this.cursor + 2, mode2);
+      return (a) ? { next: b } : { step: 3 };
+    },
+    6: (mode1, mode2) => {
+      const a = this.readByMode(this.cursor + 1, mode1);
+      const b = this.readByMode(this.cursor + 2, mode2);
 
-        const val = (a === b) ? 1 : 0;
+      return (a === 0) ? { next: b } : { step: 3 };
+    },
+    7: (mode1, mode2) => {
+      const a = this.readByMode(this.cursor + 1, mode1);
+      const b = this.readByMode(this.cursor + 2, mode2);
 
-        const writeTo = this.state[this.cursor + 3];
-        this.state[writeTo] = val;
-      },
-      4,
-    ],
-    99: [],
+      const val = (a < b) ? 1 : 0;
+
+      const writeTo = this.state[this.cursor + 3];
+      this.state[writeTo] = val;
+
+      return { step: 4 };
+    },
+    8: (mode1, mode2) => {
+      const a = this.readByMode(this.cursor + 1, mode1);
+      const b = this.readByMode(this.cursor + 2, mode2);
+
+      const val = (a === b) ? 1 : 0;
+
+      const writeTo = this.state[this.cursor + 3];
+      this.state[writeTo] = val;
+
+      return { step: 4 };
+    },
+    99: null,
   };
+
+  // There must be a better way to do this
+  requiresInput = { 3: true }
+
+  throw = (msg) => { throw new Error(`${msg}\n${this.log.slice(-1)}`); }
 
   loop = () => {
     // eslint-disable-next-line no-constant-condition
@@ -120,35 +109,29 @@ class IntCode {
       this.log.push(`${this.cursor}: ${this.state.slice(this.cursor, this.cursor + 4)}`);
 
       const current = this.state[this.cursor];
-      if (current === null || current === undefined) {
-        throw new Error(`No code found @ ${this.cursor}\n${this.log[this.log.length - 1]}`);
-      }
+      if (current === null || current === undefined) { this.error(`No code found @ ${this.cursor}`); }
 
       const parsed = parseOpCode(this.state[this.cursor]);
-      if (!parsed) { throw new Error(`Couldn't parse code @ ${this.cursor}: ${this.state[this.cursor]}`); }
+      if (!parsed) { this.error(`Couldn't parse code @ ${this.cursor}`); }
 
       const [mode3, mode2, mode1, code] = parsed;
 
-      // TODO: Handle this better
-      if (code === 3 && !this.inputs.length) { break; }
+      //  3
+      if (this.requiresInput[code] && !this.inputs.length) { break; }
 
-      const foundOpCode = this.operations[code];
-      if (!foundOpCode) { throw new Error(`Invalid opCode @ ${this.cursor}: ${this.state[this.cursor]}`); }
+      const op = this.operations[code];
+      if (op === undefined) { this.error(`Invalid operation @ ${this.cursor}`); }
 
-      const [op, step] = foundOpCode;
+      // 99
+      if (!op) { this.halted = true; break; }
 
-      if (!op) {
-        this.halted = true;
-        break;
-      }
+      const { output, next, step } = op(mode1, mode2, mode3);
 
-      const ret = op(mode1, mode2, mode3);
+      this.cursor = (next !== undefined) ? next : (this.cursor + step);
 
-      this.cursor = ret?.nextAt || (this.cursor + step);
-
-      if (ret?.output !== undefined) {
-        this.lastOutput = ret.output;
-        this.log.push(`output: ${ret.output}`);
+      if (output !== undefined) {
+        this.lastOutput = output;
+        this.log.push(`\toutput: ${output}`);
       }
     }
   }
@@ -170,23 +153,13 @@ class IntCode {
   };
 
   resume = (inputs) => {
+    if (this.halted) { this.error('Halted; cannot resume'); }
+
     this.inputs = inputs;
 
     this.loop();
 
     return this;
-  };
-
-  findValuesFor = (val) => {
-    for (let noun = 0; noun < 100; noun += 1) {
-      for (let verb = 0; verb < 100; verb += 1) {
-        const got = this.execute(noun, verb).readOutput();
-
-        if (got === val) { return (noun * 100 + verb); }
-      }
-    }
-
-    return null;
   };
 
   readState = () => this.state.join(',');
