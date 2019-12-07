@@ -1,5 +1,8 @@
 import loadText from '../../utilities/loadText';
 import IntCode from '../../common/IntCode';
+
+// import '../../common/IntCode/spec';
+
 import findValuesFor from '.';
 
 const title = '1202 Program Alarm';

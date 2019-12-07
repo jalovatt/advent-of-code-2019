@@ -2,7 +2,7 @@ import loadText from '../../utilities/loadText';
 import { findMaxDirectSignal, findMaxFeedbackSignal } from '.';
 
 import IntCode from '../../common/IntCode';
-import '../../common/IntCode/spec';
+// import '../../common/IntCode/spec';
 
 const title = 'Amplification Circuit';
 
