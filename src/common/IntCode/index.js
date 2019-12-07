@@ -18,13 +18,6 @@ class IntCode {
     this.cursor = 0;
   }
 
-  readByMode = (n, mode) => {
-    switch (mode) {
-      case 1: { return this.state[n]; }
-      default: { return this.state[this.state[n]]; }
-    }
-  }
-
   operations = {
     1: (mode1, mode2) => {
       const a = this.readByMode(this.cursor + 1, mode1);
@@ -161,6 +154,13 @@ class IntCode {
 
     return this;
   };
+
+  readByMode = (n, mode) => {
+    switch (mode) {
+      case 1: { return this.state[n]; }
+      default: { return this.state[this.state[n]]; }
+    }
+  }
 
   readState = () => this.state.join(',');
 }

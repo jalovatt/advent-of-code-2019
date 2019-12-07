@@ -1,5 +1,6 @@
 import loadText from '../../utilities/loadText';
-import Intcode from '.';
+import IntCode from '../../common/IntCode';
+import findValuesFor from '.';
 
 const title = '1202 Program Alarm';
 
@@ -17,14 +18,14 @@ describe(`Day ${__filename.match(/\/([^/]+)\/spec/)[1]} - ${title}`, () => {
   describe('Part 1', () => {
     describe('Tests', () => {
       test.each(tests)('%p => %p', (given, expected) => {
-        const computer = new Intcode(given);
+        const computer = new IntCode(given);
         expect(computer.execute().readState()).toEqual(expected);
       });
     });
 
     describe('Solution', () => {
-      const computer = new Intcode(input);
-      const solution = computer.execute(12, 2).readOutput();
+      const computer = new IntCode(input);
+      const solution = computer.execute(12, 2).state[0];
 
       test(`${solution}`, () => {
         expect(solution).toEqual(3716250);
@@ -34,8 +35,7 @@ describe(`Day ${__filename.match(/\/([^/]+)\/spec/)[1]} - ${title}`, () => {
 
   describe('Part 2', () => {
     describe('Solution', () => {
-      const computer = new Intcode(input);
-      const solution = computer.findValuesFor(19690720);
+      const solution = findValuesFor(input, 19690720);
 
       test(`${solution}`, () => {
         expect(solution).toEqual(6472);
