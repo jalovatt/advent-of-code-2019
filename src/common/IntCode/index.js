@@ -13,6 +13,9 @@ class IntCode {
   constructor(program) {
     this.initialState = program.split(',').map(v => parseInt(v, 10));
     this.state = [...this.initialState];
+    this.log = [];
+    this.inputs = [];
+    this.cursor = 0;
   }
 
   readByMode = (n, mode) => {
@@ -24,10 +27,10 @@ class IntCode {
 
   operations = {
     1: [
-      (cursor, inputs, mode1, mode2) => {
-        const a = this.readByMode(cursor + 1, mode1);
-        const b = this.readByMode(cursor + 2, mode2);
-        const writeTo = this.state[cursor + 3];
+      (mode1, mode2) => {
+        const a = this.readByMode(this.cursor + 1, mode1);
+        const b = this.readByMode(this.cursor + 2, mode2);
+        const writeTo = this.state[this.cursor + 3];
 
         const val = a + b;
 
@@ -36,10 +39,10 @@ class IntCode {
       4,
     ],
     2: [
-      (cursor, inputs, mode1, mode2) => {
-        const a = this.readByMode(cursor + 1, mode1);
-        const b = this.readByMode(cursor + 2, mode2);
-        const writeTo = this.state[cursor + 3];
+      (mode1, mode2) => {
+        const a = this.readByMode(this.cursor + 1, mode1);
+        const b = this.readByMode(this.cursor + 2, mode2);
+        const writeTo = this.state[this.cursor + 3];
 
         const val = a * b;
 
@@ -48,17 +51,17 @@ class IntCode {
       4,
     ],
     3: [
-      (cursor, inputs) => {
-        if (!inputs.length) { throw new Error('Couldn\'t get an input value'); }
+      () => {
+        if (!this.inputs.length) { throw new Error('Couldn\'t get an input value'); }
 
-        const writeTo = this.state[cursor + 1];
-        this.state[writeTo] = inputs.shift();
+        const writeTo = this.state[this.cursor + 1];
+        this.state[writeTo] = this.inputs.shift();
       },
       2,
     ],
     4: [
-      (cursor, inputs, mode1) => {
-        const val = this.readByMode(cursor + 1, mode1);
+      (mode1) => {
+        const val = this.readByMode(this.cursor + 1, mode1);
 
         return { output: val };
       },
@@ -66,9 +69,9 @@ class IntCode {
     ],
     5: [
       // eslint-disable-next-line consistent-return
-      (cursor, inputs, mode1, mode2) => {
-        const a = this.readByMode(cursor + 1, mode1);
-        const b = this.readByMode(cursor + 2, mode2);
+      (mode1, mode2) => {
+        const a = this.readByMode(this.cursor + 1, mode1);
+        const b = this.readByMode(this.cursor + 2, mode2);
 
         if (a) { return { nextAt: b }; }
       },
@@ -76,34 +79,34 @@ class IntCode {
     ],
     6: [
       // eslint-disable-next-line consistent-return
-      (cursor, inputs, mode1, mode2) => {
-        const a = this.readByMode(cursor + 1, mode1);
-        const b = this.readByMode(cursor + 2, mode2);
+      (mode1, mode2) => {
+        const a = this.readByMode(this.cursor + 1, mode1);
+        const b = this.readByMode(this.cursor + 2, mode2);
 
         if (a === 0) { return { nextAt: b }; }
       },
       3,
     ],
     7: [
-      (cursor, inputs, mode1, mode2) => {
-        const a = this.readByMode(cursor + 1, mode1);
-        const b = this.readByMode(cursor + 2, mode2);
+      (mode1, mode2) => {
+        const a = this.readByMode(this.cursor + 1, mode1);
+        const b = this.readByMode(this.cursor + 2, mode2);
 
         const val = (a < b) ? 1 : 0;
 
-        const writeTo = this.state[cursor + 3];
+        const writeTo = this.state[this.cursor + 3];
         this.state[writeTo] = val;
       },
       4,
     ],
     8: [
-      (cursor, inputs, mode1, mode2) => {
-        const a = this.readByMode(cursor + 1, mode1);
-        const b = this.readByMode(cursor + 2, mode2);
+      (mode1, mode2) => {
+        const a = this.readByMode(this.cursor + 1, mode1);
+        const b = this.readByMode(this.cursor + 2, mode2);
 
         const val = (a === b) ? 1 : 0;
 
-        const writeTo = this.state[cursor + 3];
+        const writeTo = this.state[this.cursor + 3];
         this.state[writeTo] = val;
       },
       4,
@@ -111,40 +114,65 @@ class IntCode {
     99: [],
   };
 
-  execute = (noun, verb, inputs) => {
-    this.state = [...this.initialState];
-    this.log = [];
-
-    if (noun || noun === 0) { this.state[1] = noun; }
-    if (verb || verb === 0) { this.state[2] = verb; }
-
-    let cursor = 0;
-
+  loop = () => {
     // eslint-disable-next-line no-constant-condition
     while (true) {
-      this.log.push(`${cursor}: ${this.state.slice(cursor, cursor + 4)}`);
+      this.log.push(`${this.cursor}: ${this.state.slice(this.cursor, this.cursor + 4)}`);
 
-      const parsed = parseOpCode(this.state[cursor]);
-      if (!parsed) { throw new Error(`Couldn't parse code @ ${cursor}: ${this.state[cursor]}`); }
+      const current = this.state[this.cursor];
+      if (current === null || current === undefined) {
+        throw new Error(`No code found @ ${this.cursor}\n${this.log[this.log.length - 1]}`);
+      }
+
+      const parsed = parseOpCode(this.state[this.cursor]);
+      if (!parsed) { throw new Error(`Couldn't parse code @ ${this.cursor}: ${this.state[this.cursor]}`); }
 
       const [mode3, mode2, mode1, code] = parsed;
 
+      // TODO: Handle this better
+      if (code === 3 && !this.inputs.length) { break; }
+
       const foundOpCode = this.operations[code];
-      if (!foundOpCode) { throw new Error(`Invalid opCode @ ${cursor}: ${this.state[cursor]}`); }
+      if (!foundOpCode) { throw new Error(`Invalid opCode @ ${this.cursor}: ${this.state[this.cursor]}`); }
 
       const [op, step] = foundOpCode;
 
-      if (!op) { break; }
+      if (!op) {
+        this.halted = true;
+        break;
+      }
 
-      const ret = op(cursor, inputs, mode1, mode2, mode3);
+      const ret = op(mode1, mode2, mode3);
+
+      this.cursor = ret?.nextAt || (this.cursor + step);
 
       if (ret?.output !== undefined) {
         this.lastOutput = ret.output;
         this.log.push(`output: ${ret.output}`);
       }
-
-      cursor = ret?.nextAt || (cursor + step);
     }
+  }
+
+  execute = (noun, verb, inputs) => {
+    this.state = [...this.initialState];
+    this.inputs = inputs || [];
+
+    if (noun || noun === 0) { this.state[1] = noun; }
+    if (verb || verb === 0) { this.state[2] = verb; }
+
+    this.cursor = 0;
+
+    this.started = true;
+
+    this.loop();
+
+    return this;
+  };
+
+  resume = (inputs) => {
+    this.inputs = inputs;
+
+    this.loop();
 
     return this;
   };
