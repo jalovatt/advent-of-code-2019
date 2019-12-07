@@ -88,7 +88,6 @@ class IntCode {
 
       return { step: 4 };
     },
-    99: null,
   };
 
   // There must be a better way to do this
@@ -109,14 +108,14 @@ class IntCode {
 
       const [mode3, mode2, mode1, code] = parsed;
 
-      //  3
-      if (this.requiresInput[code] && !this.inputs.length) { break; }
+      //  Write
+      if (code === 3 && !this.inputs.length) { break; }
+
+      // Halt
+      if (code === 99) { this.halted = true; break; }
 
       const op = this.operations[code];
       if (op === undefined) { this.error(`Invalid operation @ ${this.cursor}`); }
-
-      // 99
-      if (!op) { this.halted = true; break; }
 
       const { output, next, step } = op(mode1, mode2, mode3);
 

@@ -47,7 +47,7 @@ describe('IntCode', () => {
     });
   });
 
-  describe('opcodes 7 + 8', () => {
+  describe('opcode 7 + 8', () => {
     test.each([
       [{ program: '3,9,8,9,10,9,4,9,99,-1,8', input: 8 }, 1],
       [{ program: '3,9,8,9,10,9,4,9,99,-1,8', input: 5 }, 0],
