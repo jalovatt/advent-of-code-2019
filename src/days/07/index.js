@@ -1,26 +1,28 @@
 import IntCode from '../../common/IntCode';
 
+// Heap's algorithm
 // https://stackoverflow.com/a/37580979
-// TODO: Refactor so I can understand what it's doing;
-
 const permutations = (arr) => {
   const result = [arr.slice()];
   const c = new Array(arr.length).fill(0);
   let i = 1;
   let k;
-  let p;
+  let swap;
 
   while (i < arr.length) {
     if (c[i] < i) {
       k = i % 2 && c[i];
-      p = arr[i];
+
+      swap = arr[i];
       // eslint-disable-next-line no-param-reassign
       arr[i] = arr[k];
       // eslint-disable-next-line no-param-reassign
-      arr[k] = p;
+      arr[k] = swap;
+
+      result.push(arr.slice());
+
       c[i] += 1;
       i = 1;
-      result.push(arr.slice());
     } else {
       c[i] = 0;
       i += 1;

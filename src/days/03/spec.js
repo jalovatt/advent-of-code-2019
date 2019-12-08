@@ -1,7 +1,7 @@
 import arrayFromTxt from '../../utilities/loadText';
 import { shortestDistance, fewestSteps } from '.';
 
-const title = '';
+const title = 'Crossed Wires';
 
 const input = arrayFromTxt('input.txt');
 
