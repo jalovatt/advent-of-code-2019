@@ -11,7 +11,7 @@ describe(`Day ${__filename.match(/\/([^/]+)\/spec/)[1]} - ${title}`, () => {
       test('Layers', () => {
         const image = new SIF('123456789012', 3, 2);
         expect(image.layers.length).toEqual(2);
-        expect(image.layers[1]).toEqual(['7', '8', '9', '0', '1', '2']);
+        expect(image.layers[1]).toEqual('789012');
       });
     });
 
@@ -31,16 +31,16 @@ describe(`Day ${__filename.match(/\/([^/]+)\/spec/)[1]} - ${title}`, () => {
 
       test('Layers', () => {
         expect(image.layers.length).toEqual(4);
-        expect(image.layers[2]).toEqual(['2', '2', '1', '2']);
+        expect(image.layers[2]).toEqual('2212');
       });
 
       test('Decoding', () => {
-        expect(image.decode()).toEqual('0110');
+        expect(image.decode()).toEqual(['0', '1', '1', '0']);
       });
 
       test('Printing', () => {
         // expect(image.print()).toEqual('01\n10');
-        expect(image.print()).toEqual('\n⬛⬜\n⬜⬛');
+        expect(image.print()).toEqual('⬛⬜\n⬜⬛');
       });
     });
 
@@ -48,7 +48,7 @@ describe(`Day ${__filename.match(/\/([^/]+)\/spec/)[1]} - ${title}`, () => {
       const image = new SIF(input, 25, 6);
       const solution = image.print();
 
-      const expected = `
+      const expected = `\
 ⬜⬛⬛⬜⬛⬜⬜⬜⬜⬛⬛⬜⬜⬛⬛⬜⬜⬜⬜⬛⬜⬛⬛⬜⬛
 ⬜⬛⬛⬜⬛⬛⬛⬛⬜⬛⬜⬛⬛⬜⬛⬛⬛⬛⬜⬛⬜⬛⬛⬜⬛
 ⬜⬜⬜⬜⬛⬛⬛⬜⬛⬛⬜⬛⬛⬛⬛⬛⬛⬜⬛⬛⬜⬛⬛⬜⬛
@@ -56,7 +56,7 @@ describe(`Day ${__filename.match(/\/([^/]+)\/spec/)[1]} - ${title}`, () => {
 ⬜⬛⬛⬜⬛⬜⬛⬛⬛⬛⬜⬛⬛⬜⬛⬜⬛⬛⬛⬛⬜⬛⬛⬜⬛
 ⬜⬛⬛⬜⬛⬜⬜⬜⬜⬛⬛⬜⬜⬛⬛⬜⬜⬜⬜⬛⬛⬜⬜⬛⬛`;
 
-      test(`${solution}`, () => {
+      test(`\n${solution}`, () => {
         expect(solution).toEqual(expected);
       });
     });
