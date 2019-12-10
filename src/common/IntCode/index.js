@@ -15,85 +15,97 @@ class IntCode {
     this.state = [...this.initialState];
     this.log = [];
     this.inputs = [];
+    this.output = [];
     this.cursor = 0;
+    this.relativeBase = 0;
   }
 
   operations = {
-    1: (mode1, mode2) => {
+    // Add
+    1: (mode1, mode2, mode3) => {
       const a = this.readByMode(this.cursor + 1, mode1);
       const b = this.readByMode(this.cursor + 2, mode2);
-      const writeTo = this.state[this.cursor + 3];
+      const writeTo = this.writeIndexByMode(this.cursor + 3, mode3);
 
-      const val = a + b;
-
-      this.state[writeTo] = val;
+      this.state[writeTo] = a + b;
 
       return { step: 4 };
     },
-    2: (mode1, mode2) => {
+    // Multiply
+    2: (mode1, mode2, mode3) => {
       const a = this.readByMode(this.cursor + 1, mode1);
       const b = this.readByMode(this.cursor + 2, mode2);
-      const writeTo = this.state[this.cursor + 3];
+      const writeTo = this.writeIndexByMode(this.cursor + 3, mode3);
 
-      const val = a * b;
-
-      this.state[writeTo] = val;
+      this.state[writeTo] = a * b;
 
       return { step: 4 };
     },
-    3: () => {
-      if (!this.inputs.length) { throw new Error('Couldn\'t get an input value'); }
+    // Input
+    3: (mode1) => {
+      const writeTo = this.writeIndexByMode(this.cursor + 1, mode1);
 
-      const writeTo = this.state[this.cursor + 1];
       this.state[writeTo] = this.inputs.shift();
 
       return { step: 2 };
     },
+    // Output
     4: (mode1) => {
       const val = this.readByMode(this.cursor + 1, mode1);
 
-      return { output: val, step: 2 };
+      this.pushOutput(val);
+
+      return { step: 2 };
     },
+    // Jump if true
     5: (mode1, mode2) => {
       const a = this.readByMode(this.cursor + 1, mode1);
       const b = this.readByMode(this.cursor + 2, mode2);
 
       return (a) ? { next: b } : { step: 3 };
     },
+    // Jump if false
     6: (mode1, mode2) => {
       const a = this.readByMode(this.cursor + 1, mode1);
       const b = this.readByMode(this.cursor + 2, mode2);
 
       return (a === 0) ? { next: b } : { step: 3 };
     },
-    7: (mode1, mode2) => {
+    // Less than
+    7: (mode1, mode2, mode3) => {
       const a = this.readByMode(this.cursor + 1, mode1);
       const b = this.readByMode(this.cursor + 2, mode2);
+      const writeTo = this.writeIndexByMode(this.cursor + 3, mode3);
 
-      const val = (a < b) ? 1 : 0;
-
-      const writeTo = this.state[this.cursor + 3];
-      this.state[writeTo] = val;
+      this.state[writeTo] = (a < b) ? 1 : 0;
 
       return { step: 4 };
     },
-    8: (mode1, mode2) => {
+    // Equals
+    8: (mode1, mode2, mode3) => {
       const a = this.readByMode(this.cursor + 1, mode1);
       const b = this.readByMode(this.cursor + 2, mode2);
+      const writeTo = this.writeIndexByMode(this.cursor + 3, mode3);
 
-      const val = (a === b) ? 1 : 0;
-
-      const writeTo = this.state[this.cursor + 3];
-      this.state[writeTo] = val;
+      this.state[writeTo] = (a === b) ? 1 : 0;
 
       return { step: 4 };
+    },
+    // Add to relative base
+    9: (mode1) => {
+      this.relativeBase += this.readByMode(this.cursor + 1, mode1);
+
+      return { step: 2 };
     },
   };
 
-  // There must be a better way to do this
-  requiresInput = { 3: true }
-
   throw = (msg) => { throw new Error(`${msg}\n${this.log.slice(-1)}`); }
+
+  pushOutput = (output) => {
+    this.output.push(output);
+    this.lastOutput = output;
+    this.log.push(`output: ${output}`);
+  }
 
   loop = () => {
     // eslint-disable-next-line no-constant-condition
@@ -117,14 +129,9 @@ class IntCode {
       const op = this.operations[code];
       if (op === undefined) { this.error(`Invalid operation @ ${this.cursor}`); }
 
-      const { output, next, step } = op(mode1, mode2, mode3);
+      const { next, step } = op(mode1, mode2, mode3);
 
       this.cursor = (next !== undefined) ? next : (this.cursor + step);
-
-      if (output !== undefined) {
-        this.lastOutput = output;
-        this.log.push(`\toutput: ${output}`);
-      }
     }
   }
 
@@ -136,6 +143,9 @@ class IntCode {
     if (verb || verb === 0) { this.state[2] = verb; }
 
     this.cursor = 0;
+    this.relativeBase = 0;
+
+    this.output = [];
 
     this.started = true;
 
@@ -155,10 +165,34 @@ class IntCode {
   };
 
   readByMode = (n, mode) => {
+    let index;
     switch (mode) {
-      case 1: { return this.state[n]; }
-      default: { return this.state[this.state[n]]; }
+      case 2: { index = this.relativeBase + this.state[n]; break; } // relative
+      case 1: { index = n; break; } // immediate
+      default: { index = this.state[n]; break; } // position
     }
+
+    if (index < 0) {
+      this.error(`Attempt to read negative index: ${index}`);
+    }
+
+    return this.state[index] || 0;
+  }
+
+  writeIndexByMode = (n, mode) => {
+    if (mode === 1) { this.error('Attempted to write in immediate mode'); }
+
+    let index;
+    switch (mode) {
+      case 2: { index = (this.relativeBase + this.state[n]); break; }
+      default: { index = this.state[n]; break; }
+    }
+
+    if (index < 0) {
+      this.error(`Attempt to write negative index: ${index}`);
+    }
+
+    return index || 0;
   }
 
   readState = () => this.state.join(',');

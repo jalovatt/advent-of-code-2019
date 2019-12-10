@@ -26,15 +26,6 @@ describe('IntCode', () => {
     });
   });
 
-  describe('mode switching', () => {
-    const tests = [['1002,4,3,4,33', '1002,4,3,4,99']];
-
-    test.each(tests)('%p => %p', (given, expected) => {
-      const computer = new IntCode(given);
-      expect(computer.execute().readState()).toEqual(expected);
-    });
-  });
-
   describe('opcode 5 + 6', () => {
     test.each([
       [{ program: '3,12,6,12,15,1,13,14,13,4,13,99,-1,0,1,9', input: 0 }, 0],
@@ -90,6 +81,49 @@ describe('IntCode', () => {
 
         expect(output).toEqual(1001);
       });
+    });
+  });
+
+  describe('immediate mode', () => {
+    const tests = [['1002,4,3,4,33', '1002,4,3,4,99']];
+
+    test.each(tests)('%p => %p', (given, expected) => {
+      const computer = new IntCode(given);
+      expect(computer.execute().readState()).toEqual(expected);
+    });
+  });
+
+  describe('relative mode', () => {
+    test('basic', () => {
+      const program = '109,2000,109,19,99';
+      const computer = new IntCode(program);
+
+      computer.execute();
+      expect(computer.relativeBase).toEqual(2019);
+    });
+
+    // Not working?
+    test('quine', () => {
+      const program = '109,1,204,-1,1001,100,1,100,1008,100,16,101,1006,101,0,99';
+      const computer = new IntCode(program);
+      computer.execute();
+      const output = computer.log.filter(line => line.match(/output/)).map(line => line.match(/([-\d]+)$/)[1]).join(',');
+      expect(output).toEqual(program);
+    });
+  });
+
+  describe('large numbers', () => {
+    test('16 digit 1', () => {
+      const computer = new IntCode('1102,34915192,34915192,7,4,7,99,0');
+
+      const output = computer.execute().lastOutput;
+      expect(output.toString(10).length).toEqual(16);
+    });
+
+    test('16 digit 2', () => {
+      const computer = new IntCode('104,1125899906842624,99');
+
+      expect(computer.execute().lastOutput).toEqual(1125899906842624);
     });
   });
 });
