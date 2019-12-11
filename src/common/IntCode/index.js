@@ -121,7 +121,7 @@ class IntCode {
       const [mode3, mode2, mode1, code] = parsed;
 
       //  Write
-      if (code === 3 && !this.inputs.length) { break; }
+      if (code === 3 && !this.inputs.length) { this.log.push('pausing for input'); break; }
 
       // Halt
       if (code === 99) { this.halted = true; break; }
