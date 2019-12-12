@@ -1,5 +1,5 @@
 import loadText from '../../utilities/loadText';
-import { simulateMoons } from '.';
+import { simulateMoons, findCycleTime } from '.';
 
 const title = 'The N-Body Problem';
 
@@ -29,26 +29,26 @@ describe(`Day ${__filename.match(/\/([^/]+)\/spec/)[1]} - ${title}`, () => {
       const solution = simulateMoons(input, 1000).totalEnergy();
 
       test(`${solution}`, () => {
-        expect(solution).toEqual(true);
+        expect(solution).toEqual(8960);
       });
     });
   });
 
-  xdescribe('Part 2', () => {
+  describe('Part 2', () => {
     describe('Tests', () => {
-      test.each([
-        [1, 2],
-      ])('%p => %p', (given, expected) => {
-        expect(solve(given)).toEqual(expected);
+      const moons = '<x=-1, y=0, z=2>\n<x=2, y=-10, z=-7>\n<x=4, y=-8, z=8>\n<x=3, y=5, z=-1>';
+
+      test('time to return to initial state', () => {
+        expect(findCycleTime(moons)).toEqual(2772);
       });
     });
 
-    // describe('Solution', () => {
-    //   const solution = solve(input);
+    describe('Solution', () => {
+      const solution = findCycleTime(input);
 
-    //   test(`${solution}`, () => {
-    //     expect(solution).toEqual(true);
-    //   });
-    // });
+      test(`${solution}`, () => {
+        expect(solution).toEqual(314917503970904);
+      });
+    });
   });
 });
