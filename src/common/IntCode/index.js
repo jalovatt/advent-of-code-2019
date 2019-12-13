@@ -113,10 +113,10 @@ class IntCode {
       this.log.push(`${this.cursor}: ${this.state.slice(this.cursor, this.cursor + 4)}`);
 
       const current = this.state[this.cursor];
-      if (current === null || current === undefined) { this.error(`No code found @ ${this.cursor}`); }
+      if (current === null || current === undefined) { this.throw(`No code found @ ${this.cursor}`); }
 
       const parsed = parseOpCode(this.state[this.cursor]);
-      if (!parsed) { this.error(`Couldn't parse code @ ${this.cursor}`); }
+      if (!parsed) { this.throw(`Couldn't parse code @ ${this.cursor}`); }
 
       const [mode3, mode2, mode1, code] = parsed;
 
@@ -127,7 +127,7 @@ class IntCode {
       if (code === 99) { this.halted = true; break; }
 
       const op = this.operations[code];
-      if (op === undefined) { this.error(`Invalid operation @ ${this.cursor}`); }
+      if (op === undefined) { this.throw(`Invalid operation @ ${this.cursor}`); }
 
       const { next, step } = op(mode1, mode2, mode3);
 
@@ -155,7 +155,7 @@ class IntCode {
   };
 
   resume = (inputs) => {
-    if (this.halted) { this.error('Halted; cannot resume'); }
+    if (this.halted) { this.throw('Halted; cannot resume'); }
 
     this.inputs = inputs;
 
@@ -173,14 +173,14 @@ class IntCode {
     }
 
     if (index < 0) {
-      this.error(`Attempt to read negative index: ${index}`);
+      this.throw(`Attempt to read negative index: ${index}`);
     }
 
     return this.state[index] || 0;
   }
 
   writeIndexByMode = (n, mode) => {
-    if (mode === 1) { this.error('Attempted to write in immediate mode'); }
+    if (mode === 1) { this.throw('Attempted to write in immediate mode'); }
 
     let index;
     switch (mode) {
@@ -189,7 +189,7 @@ class IntCode {
     }
 
     if (index < 0) {
-      this.error(`Attempt to write negative index: ${index}`);
+      this.throw(`Attempt to write negative index: ${index}`);
     }
 
     return index || 0;
