@@ -22,7 +22,7 @@ describe(`Day ${__filename.match(/\/([^/]+)\/spec/)[1]} - ${title}`, () => {
       const solution = game.score;
 
       test(`${solution}`, () => {
-        expect(solution).toEqual(true);
+        expect(solution).toEqual(15988);
       });
     });
   });
