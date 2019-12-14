@@ -17,7 +17,7 @@ const parseReactions = reactionList => reactionList.split('\n').reduce((acc, cur
   return acc;
 }, new DAG());
 
-const totalOre = (reactions, FUEL = 1) => {
+const oreForFuel = (reactions, FUEL = 1) => {
   const needed = { FUEL };
 
   reactions.forEachInOrder((node) => {
@@ -61,12 +61,12 @@ const exponentialSearchLessThan = (cb, target, lowerLimit = 1) => {
 
 export const part1 = (reactionList) => {
   const reactions = parseReactions(reactionList);
-  return totalOre(reactions);
+  return oreForFuel(reactions);
 };
 
 export const part2 = (reactionList) => {
   const reactions = parseReactions(reactionList);
   const ORE = 1000000000000;
 
-  return exponentialSearchLessThan(n => totalOre(reactions, n), ORE);
+  return exponentialSearchLessThan(n => oreForFuel(reactions, n), ORE);
 };
