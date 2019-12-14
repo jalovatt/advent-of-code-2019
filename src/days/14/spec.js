@@ -1,5 +1,5 @@
 import loadText from '../../utilities/loadText';
-import { part1 } from '.';
+import { part1, part2 } from '.';
 
 const title = 'Space Stoichiometry';
 
@@ -20,26 +20,26 @@ describe(`Day ${__filename.match(/\/([^/]+)\/spec/)[1]} - ${title}`, () => {
       const solution = part1(input);
 
       test(`${solution}`, () => {
-        expect(solution).toEqual(true);
+        expect(solution).toEqual(1065255);
       });
     });
   });
 
-  xdescribe('Part 2', () => {
+  describe('Part 2', () => {
     describe('Tests', () => {
       test.each([
-        [1, 2],
+        ['157 ORE => 5 NZVS\n165 ORE => 6 DCFZ\n44 XJWVT, 5 KHKGT, 1 QDVJ, 29 NZVS, 9 GPVTF, 48 HKGWZ => 1 FUEL\n12 HKGWZ, 1 GPVTF, 8 PSHF => 9 QDVJ\n179 ORE => 7 PSHF\n177 ORE => 5 HKGWZ\n7 DCFZ, 7 PSHF => 2 XJWVT\n165 ORE => 2 GPVTF\n3 DCFZ, 7 NZVS, 5 HKGWZ, 10 PSHF => 8 KHKGT', 82892753],
       ])('%p => %p', (given, expected) => {
-        expect(part1(given)).toEqual(expected);
+        expect(part2(given)).toEqual(expected);
       });
     });
 
-    // describe('Solution', () => {
-    //   const solution = solve(input);
+    describe('Solution', () => {
+      const solution = part2(input);
 
-    //   test(`${solution}`, () => {
-    //     expect(solution).toEqual(true);
-    //   });
-    // });
+      test(`${solution}`, () => {
+        expect(solution).toEqual(1766154);
+      });
+    });
   });
 });
