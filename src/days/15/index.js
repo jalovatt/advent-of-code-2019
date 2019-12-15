@@ -9,10 +9,12 @@ const posFromKey = (key) => {
   return { x: parseInt(x, 10), y: parseInt(y, 10) };
 };
 
+const emptyField = () => ({ '0,0': { value: '0', distanceFromOrigin: 0 } });
+
 class Robot {
   constructor(program, field) {
     this.computer = new IntCode(program);
-    this.field = field || { '0,0': { value: '0', distanceFromOrigin: 0 } };
+    this.field = field || emptyField();
     this.pos = { x: 0, y: 0 };
     this.tankPos = null;
     this.distanceFromOrigin = 0;
@@ -24,43 +26,46 @@ class Robot {
     - Purely random
     - Random avoiding known walls
     - Random avoiding known walls, prioritizing unexplored squares
+
+    Directions:
+      1   North
+      2   South
+      3   West
+      4   East
   */
   getNextInput = () => {
-    const tiles = {
-      north: this.field[keyFromPos(this.pos.x, this.pos.y - 1)],
-      south: this.field[keyFromPos(this.pos.x, this.pos.y + 1)],
-      east: this.field[keyFromPos(this.pos.x + 1, this.pos.y)],
-      west: this.field[keyFromPos(this.pos.x - 1, this.pos.y)],
-    };
+    const choices = [
+      { tile: this.field[keyFromPos(this.pos.x, this.pos.y - 1)], direction: 1 },
+      { tile: this.field[keyFromPos(this.pos.x, this.pos.y + 1)], direction: 2 },
+      { tile: this.field[keyFromPos(this.pos.x - 1, this.pos.y)], direction: 3 },
+      { tile: this.field[keyFromPos(this.pos.x + 1, this.pos.y)], direction: 4 },
+    ];
 
-    const legal = [
-      tiles.north?.value !== '#' && 1,
-      tiles.south?.value !== '#' && 2,
-      tiles.west?.value !== '#' && 3,
-      tiles.east?.value !== '#' && 4,
-    ].filter(v => !!v);
+    const unexplored = choices.filter(choice => !choice.tile);
 
-    const unexplored = [
-      !tiles.north && 1,
-      !tiles.south && 2,
-      !tiles.west && 3,
-      !tiles.east && 4,
-    ].filter(v => !!v);
+    if (unexplored.length) {
+      const dest = unexplored[Math.floor(Math.random() * unexplored.length)];
+      return dest.direction;
+    }
 
-    const move = (unexplored.length)
-      ? unexplored[Math.floor(Math.random() * unexplored.length)]
-      : legal[Math.floor(Math.random() * legal.length)];
-    return move;
+    const best = Object.values(choices).filter(v => v.tile.value !== '#')
+      .reduce((acc, choice) => ((choice.tile.distanceFromOrigin < acc.tile.distanceFromOrigin)
+        ? choice
+        : acc));
+
+    return best.direction;
   }
 
   execute = (breakAtTank) => {
-    const LIMIT = 10000;
+    const LIMIT = 4000;
     let n = 0;
     while (n < LIMIT && (!breakAtTank || !this.tankPos)) {
       n += 1;
       const input = this.getNextInput();
       this.update(input);
     }
+
+    return n;
   }
 
   update = (input) => {
@@ -141,28 +146,17 @@ const printField = (field) => {
 };
 
 export const findTank = (program) => {
-  const field = {};
+  const robot = new Robot(program);
+  const cycles = robot.execute(true);
 
-  const NUM_ROBOTS = 20;
-  let n = 0;
-  while (n < NUM_ROBOTS) {
-    n += 1;
-    const robot = new Robot(program, field);
-    robot.execute(true);
-    if (robot.tankPos) {
-      console.log(`robot ${n} found the tank!`);
-      return robot.distanceFromOrigin;
-    }
-  }
-
-  console.log('no robots found the tank :(');
-  return -1;
+  console.log(`Found the tank in ${cycles} cycles`);
+  return robot.distanceFromOrigin;
 };
 
 export const solve = (program) => {
-  const field = {};
+  const field = emptyField();
 
-  const NUM_ROBOTS = 20;
+  const NUM_ROBOTS = 1;
   let n = 0;
   while (n < NUM_ROBOTS) {
     n += 1;
