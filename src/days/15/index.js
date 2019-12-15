@@ -1,9 +1,18 @@
+/* eslint-disable max-classes-per-file */
+/* eslint-disable no-console */
 import IntCode from '../../common/IntCode';
 
+const keyFromPos = (x, y) => `${x},${y}`;
+
+const posFromKey = (key) => {
+  const [, x, y] = key.match(/([-\d]+),([-\d]+)/);
+  return { x: parseInt(x, 10), y: parseInt(y, 10) };
+};
+
 class Robot {
-  constructor(program) {
+  constructor(program, field) {
     this.computer = new IntCode(program);
-    this.field = { '0,0': '0' };
+    this.field = field || { '0,0': { value: '0', distanceFromOrigin: 0 } };
     this.pos = { x: 0, y: 0 };
     this.tankPos = null;
     this.distanceFromOrigin = 0;
@@ -13,15 +22,15 @@ class Robot {
   /*
     Attempts:
     - Purely random
-    - Random minus walls
-    - Random minus walls, prioritizing unexplored squares
+    - Random avoiding known walls
+    - Random avoiding known walls, prioritizing unexplored squares
   */
   getNextInput = () => {
     const tiles = {
-      north: this.field[`${this.pos.x},${this.pos.y - 1}`],
-      south: this.field[`${this.pos.x},${this.pos.y + 1}`],
-      east: this.field[`${this.pos.x + 1},${this.pos.y}`],
-      west: this.field[`${this.pos.x - 1},${this.pos.y}`],
+      north: this.field[keyFromPos(this.pos.x, this.pos.y - 1)],
+      south: this.field[keyFromPos(this.pos.x, this.pos.y + 1)],
+      east: this.field[keyFromPos(this.pos.x + 1, this.pos.y)],
+      west: this.field[keyFromPos(this.pos.x - 1, this.pos.y)],
     };
 
     const legal = [
@@ -44,41 +53,14 @@ class Robot {
     return move;
   }
 
-  execute = () => {
+  execute = (breakAtTank) => {
     const LIMIT = 10000;
     let n = 0;
-    while (n < LIMIT) {
+    while (n < LIMIT && (!breakAtTank || !this.tankPos)) {
       n += 1;
       const input = this.getNextInput();
-
-      const output = this.update(input);
-
-      switch (output) {
-        case 1: {
-          this.pos = this.applyMove(input);
-          const key = `${this.pos.x},${this.pos.y}`;
-          this.distanceFromOrigin = this.field[key] ? this.field[key].distanceFromOrigin : this.distanceFromOrigin + 1;
-          this.maxDistanceFromOrigin = Math.max(this.distanceFromOrigin, this.maxDistanceFromOrigin);
-          this.updateField(this.pos, '.');
-          break;
-        }
-        case 2: {
-          this.pos = this.applyMove(input);
-          const key = `${this.pos.x},${this.pos.y}`;
-          this.distanceFromOrigin = this.field[key] ? this.field[key].distanceFromOrigin : this.distanceFromOrigin + 1;
-          this.maxDistanceFromOrigin = Math.max(this.distanceFromOrigin, this.maxDistanceFromOrigin);
-          this.updateField(this.pos, 'X');
-          this.tankPos = this.pos;
-          break;
-        }
-        default: {
-          this.updateField(this.applyMove(input), '#');
-          break;
-        }
-      }
+      this.update(input);
     }
-
-    console.log(`stopped after ${n}. tank:`, this.tankPos, this.tankPos && this.field[`${this.tankPos.x},${this.tankPos.y}`]);
   }
 
   update = (input) => {
@@ -88,24 +70,40 @@ class Robot {
 
     this.computer.output = [];
 
-    return output[0];
+    if (output[0] === 0) { this.updateField(this.applyMove(input), '#'); return; }
+
+    this.pos = this.applyMove(input);
+
+    const key = keyFromPos(this.pos.x, this.pos.y);
+    this.distanceFromOrigin = this.field[key]
+      ? this.field[key].distanceFromOrigin
+      : this.distanceFromOrigin + 1;
+
+    if (output[0] === 1) {
+      this.updateField(this.pos, '.');
+    } else if (output[0] === 2) {
+      this.updateField(this.pos, 'X');
+      this.tankPos = this.pos;
+    }
+
+    this.maxDistanceFromOrigin = Math.max(this.distanceFromOrigin, this.maxDistanceFromOrigin);
   };
 
   applyMove = (direction) => {
-    const pos = { ...this.pos };
+    let { x, y } = this.pos;
     switch (direction) {
-      case 1: { pos.y -= 1; break; }
-      case 2: { pos.y += 1; break; }
-      case 3: { pos.x -= 1; break; }
-      case 4: { pos.x += 1; break; }
+      case 1: { y -= 1; break; }
+      case 2: { y += 1; break; }
+      case 3: { x -= 1; break; }
+      case 4: { x += 1; break; }
       default: { break; }
     }
 
-    return pos;
+    return { x, y };
   };
 
   updateField = (pos, value) => {
-    const key = `${pos.x},${pos.y}`;
+    const key = keyFromPos(pos.x, pos.y);
     this.field[key] = this.field[key] || { value, distanceFromOrigin: this.distanceFromOrigin };
   }
 }
@@ -116,10 +114,9 @@ const printField = (field) => {
 
   const arr = [];
 
-  Object.entries(field).forEach(([pos, val]) => {
-    let [, x, y] = pos.match(/([-\d]+),([-\d]+)/);
-    x = parseInt(x, 10);
-    y = parseInt(y, 10);
+  Object.entries(field).forEach(([key, val]) => {
+    if (!key) { console.error('bad entry:', key, val); return; }
+    const { x, y } = posFromKey(key);
 
     min.x = Math.min(min.x, x);
     max.x = Math.max(max.x, x);
@@ -143,25 +140,36 @@ const printField = (field) => {
   console.log(JSON.stringify(out, null, 2));
 };
 
-const addFieldValues = (field, other) => {
-  Object.entries(other).forEach(([key, val]) => field[key] = field[key] || val);
-};
-
-// eslint-disable-next-line import/prefer-default-export
-export const solve = (program) => {
+export const findTank = (program) => {
   const field = {};
 
-  const NUM_ROBOTS = 4;
+  const NUM_ROBOTS = 20;
   let n = 0;
   while (n < NUM_ROBOTS) {
     n += 1;
-    const robot = new Robot(program);
+    const robot = new Robot(program, field);
+    robot.execute(true);
+    if (robot.tankPos) {
+      console.log(`robot ${n} found the tank!`);
+      return robot.distanceFromOrigin;
+    }
+  }
+
+  console.log('no robots found the tank :(');
+  return -1;
+};
+
+export const solve = (program) => {
+  const field = {};
+
+  const NUM_ROBOTS = 20;
+  let n = 0;
+  while (n < NUM_ROBOTS) {
+    n += 1;
+    const robot = new Robot(program, field);
     robot.execute();
-    addFieldValues(field, robot.field);
-    console.log(`robot ${NUM_ROBOTS - n} finished. max distance: ${robot.maxDistanceFromOrigin}.`);
+    console.log(`robot ${n} finished. max distance: ${robot.maxDistanceFromOrigin}.`);
   }
 
   printField(field);
-  // console.dir(robot.field);
-  // console.dir(robot.tankPos);
 };
