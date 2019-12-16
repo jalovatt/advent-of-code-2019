@@ -28,7 +28,7 @@ describe(`Day ${__filename.match(/\/([^/]+)\/spec/)[1]} - ${title}`, () => {
       });
     });
 
-    // describe('Solution (takes ~45 seconds)', () => {
+    // describe('Solution', () => {
     //   const output = iterate(input, 100);
 
     //   const solution = output.toString(10).slice(0, 8);

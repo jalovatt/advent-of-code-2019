@@ -1,6 +1,10 @@
 const basePattern = [0, 1, 0, -1];
 
+const patterns = {};
 const getPattern = (n, length) => {
+  const key = `${n},${length}`;
+  if (patterns[key]) { return patterns[key]; }
+
   const rawPattern = [];
   basePattern.forEach((digit) => {
     for (let i = 0; i < n; i += 1) {
@@ -12,33 +16,31 @@ const getPattern = (n, length) => {
 
   const pattern = new Array(times).fill(rawPattern).flat();
   pattern.shift();
+
+  patterns[key] = pattern;
   return pattern;
 };
 
-// eslint-disable-next-line import/prefer-default-export
+const newDigit = (digits, pattern) => {
+  const value = digits.reduce((acc, cur, i) => acc + (cur * pattern[i]), 0);
+
+  return Math.abs(value) % 10;
+};
+
 export const iterate = (input, n) => {
-  // console.log('--------');
   const inputDigits = input.split('').map(v => parseInt(v, 10));
   let outputDigits = [...inputDigits];
 
   for (let i = 0; i < n; i += 1) {
-    // console.log(`loop start with: ${outputDigits.join('')}`);
     const currentDigits = [];
     // eslint-disable-next-line no-loop-func
     outputDigits.forEach((v, index) => {
-      let pattern = getPattern(index + 1, outputDigits.length);
-      // console.log(`\tpattern @ ${index} = ${pattern.join(', ')}`);
+      const pattern = getPattern(index + 1, outputDigits.length);
 
-      const value = outputDigits.reduce((acc, cur, innerIndex) => {
-        return acc + (cur * pattern[innerIndex]);
-      }, 0);
-
-      currentDigits.push(Math.abs(value) % 10);
+      currentDigits.push(newDigit(outputDigits, pattern));
     });
 
     outputDigits = currentDigits;
-    // console.log(`loop ended with: ${outputDigits.join('')}`);
-    console.log(`finished iteration ${i}`);
   }
 
   return outputDigits.join('');
@@ -49,7 +51,7 @@ export const findFirstEight = (input, n) => {
   return output.toString(10).slice(0, 8);
 };
 
-export const part2 = (input, n) => {
+export const part2 = (input) => {
   const inputArr = input.split('');
   const fullInputDigits = inputArr.reduce((acc, cur, index) => {
     for (let i = 0; i < 10000; i += 1) {
