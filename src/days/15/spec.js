@@ -1,5 +1,5 @@
 import loadText from '../../utilities/loadText';
-import { findTank, solve } from '.';
+import { findTank, timeToFill } from '.';
 
 const title = 'Oxygen System';
 
@@ -16,13 +16,13 @@ describe(`Day ${__filename.match(/\/([^/]+)\/spec/)[1]} - ${title}`, () => {
     });
   });
 
-  // describe('Part 2', () => {
-  //   describe('Solution', () => {
-  //     const solution = solve(input);
+  describe('Part 2', () => {
+    describe('Solution', () => {
+      const solution = timeToFill(input);
 
-  //     test(`${solution}`, () => {
-  //       expect(solution).toEqual(true);
-  //     });
-  //   });
-  // });
+      test(`${solution}`, () => {
+        expect(solution).toEqual(358);
+      });
+    });
+  });
 });

@@ -9,14 +9,58 @@ const posFromKey = (key) => {
   return { x: parseInt(x, 10), y: parseInt(y, 10) };
 };
 
-const emptyField = () => ({ '0,0': { value: '0', distanceFromOrigin: 0 } });
+class Field {
+  constructor() {
+    this.tiles = { '0,0': { value: '0', distanceFromOrigin: 0 } };
+    this.origin = { x: 0, y: 0 };
+    this.tankPos = null;
+  }
+
+  get = pos => this.tiles[keyFromPos(pos.x, pos.y)]
+
+  set = (pos, value, distanceFromOrigin) => {
+    this.tiles[keyFromPos(pos.x, pos.y)] = { value, distanceFromOrigin };
+  }
+
+  print = () => {
+    const min = { x: 0, y: 0 };
+    const max = { x: 0, y: 0 };
+
+    const arr = [];
+
+    Object.entries(this.tiles).forEach(([key, val]) => {
+      if (!key) { console.error('bad entry:', key, val); return; }
+      const { x, y } = posFromKey(key);
+
+      min.x = Math.min(min.x, x);
+      max.x = Math.max(max.x, x);
+      min.y = Math.min(min.y, y);
+      max.y = Math.max(max.y, y);
+
+      if (!arr[y]) { arr[y] = []; }
+      arr[y][x] = val;
+    });
+
+    const out = [];
+    for (let row = min.y; row <= max.y; row += 1) {
+      let rowArr = [];
+      for (let col = min.x; col <= max.x; col += 1) {
+        rowArr.push(arr[row][col]);
+      }
+
+      rowArr = rowArr.map(v => (v ? v.value : ' '));
+      out.push(rowArr.join(''));
+    }
+
+    console.log(JSON.stringify(out, null, 2));
+  };
+}
 
 class Robot {
   constructor(program, field) {
     this.computer = new IntCode(program);
-    this.field = field || emptyField();
+    this.field = field;
     this.pos = { x: 0, y: 0 };
-    this.tankPos = null;
     this.distanceFromOrigin = 0;
     this.maxDistanceFromOrigin = 0;
   }
@@ -35,10 +79,10 @@ class Robot {
   */
   getNextInput = () => {
     const choices = [
-      { tile: this.field[keyFromPos(this.pos.x, this.pos.y - 1)], direction: 1 },
-      { tile: this.field[keyFromPos(this.pos.x, this.pos.y + 1)], direction: 2 },
-      { tile: this.field[keyFromPos(this.pos.x - 1, this.pos.y)], direction: 3 },
-      { tile: this.field[keyFromPos(this.pos.x + 1, this.pos.y)], direction: 4 },
+      { tile: this.field.get({ x: this.pos.x, y: this.pos.y - 1 }), direction: 1 },
+      { tile: this.field.get({ x: this.pos.x, y: this.pos.y + 1 }), direction: 2 },
+      { tile: this.field.get({ x: this.pos.x - 1, y: this.pos.y }), direction: 3 },
+      { tile: this.field.get({ x: this.pos.x + 1, y: this.pos.y }), direction: 4 },
     ];
 
     const unexplored = choices.filter(choice => !choice.tile);
@@ -56,7 +100,7 @@ class Robot {
     return best.direction;
   }
 
-  execute = (breakAtTank) => {
+  explore = (breakAtTank) => {
     const LIMIT = 4000;
     let n = 0;
     while (n < LIMIT && (!breakAtTank || !this.tankPos)) {
@@ -79,9 +123,9 @@ class Robot {
 
     this.pos = this.applyMove(input);
 
-    const key = keyFromPos(this.pos.x, this.pos.y);
-    this.distanceFromOrigin = this.field[key]
-      ? this.field[key].distanceFromOrigin
+    const next = this.field.get(this.pos);
+    this.distanceFromOrigin = next
+      ? next.distanceFromOrigin
       : this.distanceFromOrigin + 1;
 
     if (output[0] === 1) {
@@ -108,62 +152,32 @@ class Robot {
   };
 
   updateField = (pos, value) => {
-    const key = keyFromPos(pos.x, pos.y);
-    this.field[key] = this.field[key] || { value, distanceFromOrigin: this.distanceFromOrigin };
+    if (!this.field.get(pos)) {
+      this.field.set(pos, value, this.distanceFromOrigin);
+    }
   }
 }
 
-const printField = (field) => {
-  const min = { x: 0, y: 0 };
-  const max = { x: 0, y: 0 };
-
-  const arr = [];
-
-  Object.entries(field).forEach(([key, val]) => {
-    if (!key) { console.error('bad entry:', key, val); return; }
-    const { x, y } = posFromKey(key);
-
-    min.x = Math.min(min.x, x);
-    max.x = Math.max(max.x, x);
-    min.y = Math.min(min.y, y);
-    max.y = Math.max(max.y, y);
-
-    if (!arr[y]) { arr[y] = []; }
-    arr[y][x] = val;
-  });
-
-  const out = [];
-  for (let row = min.y; row <= max.y; row += 1) {
-    const rowArr = [];
-    for (let col = min.x; col <= max.x; col += 1) {
-      rowArr.push(arr[row][col]);
-    }
-
-    out.push(rowArr.map(v => (v ? v.value : ' ')).join(''));
-  }
-
-  console.log(JSON.stringify(out, null, 2));
-};
-
 export const findTank = (program) => {
   const robot = new Robot(program);
-  const cycles = robot.execute(true);
+  const cycles = robot.explore(true);
 
   console.log(`Found the tank in ${cycles} cycles`);
   return robot.distanceFromOrigin;
 };
 
-export const solve = (program) => {
-  const field = emptyField();
+export const timeToFill = (program) => {
+  const robot = new Robot(program, new Field());
+  robot.explore(true);
 
-  const NUM_ROBOTS = 1;
-  let n = 0;
-  while (n < NUM_ROBOTS) {
-    n += 1;
-    const robot = new Robot(program, field);
-    robot.execute();
-    console.log(`robot ${n} finished. max distance: ${robot.maxDistanceFromOrigin}.`);
-  }
+  const field = new Field();
+  field.origin = { ...robot.tankPos };
 
-  printField(field);
+  robot.field = field;
+  robot.distanceFromOrigin = 0;
+  robot.maxDistanceFromOrigin = 0;
+
+  robot.explore();
+
+  return robot.maxDistanceFromOrigin;
 };
