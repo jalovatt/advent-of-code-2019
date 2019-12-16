@@ -2,24 +2,30 @@
 /* eslint-disable no-console */
 import IntCode from '../../common/IntCode';
 
-const keyFromPos = (x, y) => `${x},${y}`;
+const keyFromPos = ({ x, y }) => `${x},${y}`;
 
 const posFromKey = (key) => {
   const [, x, y] = key.match(/([-\d]+),([-\d]+)/);
   return { x: parseInt(x, 10), y: parseInt(y, 10) };
 };
 
+const clearExplored = tiles => Object.entries(tiles).reduce((acc, [key, tile]) => {
+  if (tile.value === '#') { acc[key] = { value: '#' }; }
+  return acc;
+}, {});
+
 class Field {
-  constructor() {
-    this.tiles = { '0,0': { value: '0', distanceFromOrigin: 0 } };
-    this.origin = { x: 0, y: 0 };
+  constructor(origin = { x: 0, y: 0 }, tiles = {}) {
+    this.tiles = tiles;
+    this.tiles[keyFromPos(origin)] = { value: '0', distanceFromOrigin: 0 };
+    this.origin = origin;
     this.tankPos = null;
   }
 
-  get = pos => this.tiles[keyFromPos(pos.x, pos.y)]
+  get = pos => this.tiles[keyFromPos(pos)]
 
   set = (pos, value, distanceFromOrigin) => {
-    this.tiles[keyFromPos(pos.x, pos.y)] = { value, distanceFromOrigin };
+    this.tiles[keyFromPos(pos)] = { value, distanceFromOrigin };
   }
 
   print = () => {
@@ -65,51 +71,14 @@ class Robot {
     this.maxDistanceFromOrigin = 0;
   }
 
-  /*
-    Attempts:
-    - Purely random
-    - Random avoiding known walls
-    - Random avoiding known walls, prioritizing unexplored squares
-
-    Directions:
-      1   North
-      2   South
-      3   West
-      4   East
-  */
-  getNextInput = () => {
-    const choices = [
-      { tile: this.field.get({ x: this.pos.x, y: this.pos.y - 1 }), direction: 1 },
-      { tile: this.field.get({ x: this.pos.x, y: this.pos.y + 1 }), direction: 2 },
-      { tile: this.field.get({ x: this.pos.x - 1, y: this.pos.y }), direction: 3 },
-      { tile: this.field.get({ x: this.pos.x + 1, y: this.pos.y }), direction: 4 },
-    ];
-
-    const unexplored = choices.filter(choice => !choice.tile);
-
-    if (unexplored.length) {
-      const dest = unexplored[Math.floor(Math.random() * unexplored.length)];
-      return dest.direction;
-    }
-
-    const best = Object.values(choices).filter(v => v.tile.value !== '#')
-      .reduce((acc, choice) => ((choice.tile.distanceFromOrigin < acc.tile.distanceFromOrigin)
-        ? choice
-        : acc));
-
-    return best.direction;
-  }
-
   explore = (breakAtTank) => {
-    const LIMIT = 4000;
-    let n = 0;
-    while (n < LIMIT && (!breakAtTank || !this.tankPos)) {
-      n += 1;
-      const input = this.getNextInput();
+    while (!(breakAtTank && this.tankPos)) {
+      const input = this.chooseDirection();
+
+      // Explored the maze and returned to the origin
+      if (input === 0) { break; }
       this.update(input);
     }
-
-    return n;
   }
 
   update = (input) => {
@@ -118,7 +87,6 @@ class Robot {
       : this.computer.execute(null, null, [input]);
 
     this.computer.output = [];
-
     if (output[0] === 0) { this.updateField(this.applyMove(input), '#'); return; }
 
     this.pos = this.applyMove(input);
@@ -137,6 +105,42 @@ class Robot {
 
     this.maxDistanceFromOrigin = Math.max(this.distanceFromOrigin, this.maxDistanceFromOrigin);
   };
+
+  /*
+    Attempts:
+    - Purely random
+    - Random avoiding known walls
+    - Random avoiding known walls, prioritizing unexplored squares
+    - Depth-first search; as above, but if there are no unexplored squares backtrack
+      until we find one. If we return to the origin, we've explored the entire map.
+
+    Directions:
+      1   North
+      2   South
+      3   West
+      4   East
+  */
+  chooseDirection = () => {
+    const choices = [
+      { tile: this.field.get({ x: this.pos.x, y: this.pos.y - 1 }), direction: 1 },
+      { tile: this.field.get({ x: this.pos.x, y: this.pos.y + 1 }), direction: 2 },
+      { tile: this.field.get({ x: this.pos.x - 1, y: this.pos.y }), direction: 3 },
+      { tile: this.field.get({ x: this.pos.x + 1, y: this.pos.y }), direction: 4 },
+    ];
+
+    const unexplored = choices.filter(choice => !choice.tile);
+
+    if (unexplored.length) {
+      return unexplored[Math.floor(Math.random() * unexplored.length)].direction;
+    }
+
+    const best = choices.filter(v => v.tile.value !== '#')
+      .reduce((acc, choice) => ((choice.tile.distanceFromOrigin < acc.tile.distanceFromOrigin)
+        ? choice
+        : acc));
+
+    return (best.tile.distanceFromOrigin > 0) ? best.direction : 0;
+  }
 
   applyMove = (direction) => {
     let { x, y } = this.pos;
@@ -159,10 +163,9 @@ class Robot {
 }
 
 export const findTank = (program) => {
-  const robot = new Robot(program);
-  const cycles = robot.explore(true);
+  const robot = new Robot(program, new Field());
+  robot.explore(true);
 
-  console.log(`Found the tank in ${cycles} cycles`);
   return robot.distanceFromOrigin;
 };
 
@@ -170,10 +173,9 @@ export const timeToFill = (program) => {
   const robot = new Robot(program, new Field());
   robot.explore(true);
 
-  const field = new Field();
-  field.origin = { ...robot.tankPos };
+  const tiles = clearExplored(robot.field.tiles);
 
-  robot.field = field;
+  robot.field = new Field(robot.tankPos, tiles);
   robot.distanceFromOrigin = 0;
   robot.maxDistanceFromOrigin = 0;
 
