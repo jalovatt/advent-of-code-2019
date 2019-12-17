@@ -1,70 +1,54 @@
-const basePattern = [0, 1, 0, -1];
+const newDigit = (digits, currentPos) => {
+  let value = 0;
 
-const patterns = {};
-const getPattern = (n, length) => {
-  const key = `${n},${length}`;
-  if (patterns[key]) { return patterns[key]; }
+  const step = (currentPos + 1) * 4;
+  const subtractOffset = 2 * (currentPos + 1);
 
-  const rawPattern = [];
-  basePattern.forEach((digit) => {
-    for (let i = 0; i < n; i += 1) {
-      rawPattern.push(digit);
-    }
-  });
+  for (let i = currentPos; i < digits.length; i += step) {
+    const sliceOffset = i + currentPos + 1;
 
-  const times = Math.ceil(length / rawPattern.length) + 1;
-
-  const pattern = new Array(times).fill(rawPattern).flat();
-  pattern.shift();
-
-  patterns[key] = pattern;
-  return pattern;
-};
-
-const newDigit = (digits, pattern) => {
-  const value = digits.reduce((acc, cur, i) => acc + (cur * pattern[i]), 0);
+    value += digits.slice(i, sliceOffset)
+      .reduce((acc, v) => acc + v, 0);
+    value -= digits.slice(i + subtractOffset, sliceOffset + subtractOffset)
+      .reduce((acc, v) => acc + v, 0);
+  }
 
   return Math.abs(value) % 10;
 };
 
-export const iterate = (input, n) => {
-  const inputDigits = input.split('').map(v => parseInt(v, 10));
-  let outputDigits = [...inputDigits];
+export const part1 = (input, n) => {
+  const digits = input.split('').map(v => parseInt(v, 10));
 
-  for (let i = 0; i < n; i += 1) {
-    const currentDigits = [];
-    // eslint-disable-next-line no-loop-func
-    outputDigits.forEach((v, index) => {
-      const pattern = getPattern(index + 1, outputDigits.length);
-
-      currentDigits.push(newDigit(outputDigits, pattern));
-    });
-
-    outputDigits = currentDigits;
+  for (let iter = 0; iter < n; iter += 1) {
+    for (let i = 0; i < digits.length; i += 1) {
+      digits[i] = newDigit(digits, i);
+    }
   }
 
-  return outputDigits.join('');
-};
-
-export const findFirstEight = (input, n) => {
-  const output = iterate(input, n);
-  return output.toString(10).slice(0, 8);
+  return digits.join('');
 };
 
 export const part2 = (input) => {
-  const inputArr = input.split('');
-  const fullInputDigits = inputArr.reduce((acc, cur, index) => {
+  const startOffset = parseInt(input.slice(0, 7), 10);
+
+  const digits = input.split('').reduce((acc, cur, index) => {
+    const value = parseInt(cur, 10);
+
     for (let i = 0; i < 10000; i += 1) {
-      acc[index + i * inputArr.length] = cur;
+      acc[index + i * input.length] = value;
     }
     return acc;
-  }, []);
+  }, []).slice(startOffset);
 
-  const fullInputStr = fullInputDigits.join('');
-  const output = iterate(fullInputStr, 100);
+  for (let iter = 0; iter < 100; iter += 1) {
+    let sum = digits.reduce((acc, v) => acc + v, 0);
+    for (let i = 0; i < digits.length; i += 1) {
+      const value = digits[i];
 
-  const place = parseInt(input.slice(0, 7), 10);
-  console.log(input.slice(0, 10), place, output.length);
-  const str = output.slice(place, place + 8);
-  return str;
+      digits[i] = sum % 10;
+      sum -= value;
+    }
+  }
+
+  return digits.slice(0, 8).join('');
 };
