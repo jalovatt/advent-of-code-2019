@@ -3,6 +3,7 @@ import IntCode from '../../common/IntCode';
 class Game {
   constructor(input) {
     this.computer = new IntCode(input);
+    this.computer.maxStoredOutput = 10000;
 
     this.field = {};
     this.score = 0;

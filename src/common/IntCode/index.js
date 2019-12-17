@@ -13,12 +13,15 @@ class IntCode {
   constructor(program) {
     this.initialState = program.split(',').map(v => parseInt(v, 10));
     this.state = [...this.initialState];
-    this.log = [];
     this.inputs = [];
-    this.output = [];
+
     this.cursor = 0;
     this.relativeBase = 0;
-    this.maxStoredOutputs = 1000;
+
+    this.output = [];
+    this.maxStoredOutput = 1000;
+
+    this.log = [];
     this.shouldLog = true;
   }
 
@@ -101,18 +104,17 @@ class IntCode {
     },
   };
 
+  throw = (msg) => { throw new Error(`${msg}\n${this.log.slice(-1)}`); }
+
   pushLog = (msg) => {
     if (this.shouldLog) { this.log.push(msg); }
   }
 
-  throw = (msg) => { throw new Error(`${msg}\n${this.log.slice(-1)}`); }
-
   pushOutput = (output) => {
     this.output.push(output);
-    if (this.output.length > this.maxStoredOutputs) { this.output.shift(); }
+    if (this.output.length > this.maxStoredOutput) { this.output.shift(); }
 
-    this.lastOutput = output;
-    // this.log.push(`output: ${output}`);
+    this.pushLog(`output: ${output}`);
   }
 
   loop = () => {
@@ -134,6 +136,9 @@ class IntCode {
       // Halt
       if (code === 99) { this.halted = true; break; }
 
+      // Break on output match
+      if (code === 4 && this.breakOnOutput?.(this.output)) { break; }
+
       const op = this.operations[code];
       if (op === undefined) { this.throw(`Invalid operation @ ${this.cursor}`); }
 
@@ -143,9 +148,9 @@ class IntCode {
     }
   }
 
-  execute = (noun, verb, inputs) => {
+  execute = (noun, verb, inputs = []) => {
     this.state = [...this.initialState];
-    this.inputs = inputs || [];
+    this.inputs = inputs;
 
     if (noun || noun === 0) { this.state[1] = noun; }
     if (verb || verb === 0) { this.state[2] = verb; }
@@ -165,7 +170,7 @@ class IntCode {
   resume = (inputs) => {
     if (this.halted) { this.throw('Halted; cannot resume'); }
 
-    this.inputs = inputs;
+    if (inputs) { inputs.forEach(v => this.inputs.push(v)); }
 
     this.loop();
 

@@ -37,7 +37,7 @@ export const findMaxDirectSignal = (program) => {
 
   return perms.reduce((maxSignal, settings) => {
     const signal = thrusters.reduce((input, thruster, i) => (
-      thruster.execute(null, null, [settings[i], input]).lastOutput
+      thruster.execute(null, null, [settings[i], input]).output.pop()
     ), 0);
 
     // eslint-disable-next-line no-param-reassign
@@ -61,14 +61,16 @@ export const findMaxFeedbackSignal = (program) => {
     while (!thrusters[4].halted) {
       const thruster = thrusters[i];
 
-      output = (!thruster.started)
-        ? thruster.execute(null, null, [settings[i], output]).lastOutput
-        : thruster.resume([output]).lastOutput;
+      const fullOutput = (!thruster.started)
+        ? thruster.execute(null, null, [settings[i], output]).output
+        : thruster.resume([output]).output;
+
+      output = fullOutput[fullOutput.length - 1];
 
       i = (i + 1) % thrusters.length;
     }
 
-    const signal = thrusters[4].lastOutput;
+    const signal = thrusters[4].output.pop();
 
     // eslint-disable-next-line no-param-reassign
     if (signal > maxSignal) { maxSignal = signal; }

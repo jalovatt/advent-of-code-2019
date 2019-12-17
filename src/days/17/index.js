@@ -21,7 +21,7 @@ export const sumIntersections = (view) => {
   return total;
 };
 
-class GoBot {
+class Robot {
   constructor(field) {
     this.field = field;
     this.pos = this.findStart();
@@ -34,6 +34,8 @@ class GoBot {
         if (this.field[row][column] === '^') { return { x: column, y: row }; }
       }
     }
+
+    return null;
   }
 
   nextPos = (direction) => {
@@ -67,6 +69,7 @@ class GoBot {
 
   countMoves = () => {
     let moves = 0;
+    // eslint-disable-next-line no-constant-condition
     while (true) {
       const nextPos = this.nextPos(this.direction);
       if (this.field[nextPos.y]?.[nextPos.x] !== '#') { break; }
@@ -81,6 +84,7 @@ class GoBot {
   computeDirectInstructions = () => {
     const instructions = [];
 
+    // eslint-disable-next-line no-constant-condition
     while (true) {
       const turn = this.findTurn();
       if (!turn) { break; }
@@ -99,29 +103,37 @@ class GoBot {
 class ControlSystem {
   constructor(program) {
     this.computer = new IntCode(program);
-    this.lastOutput = [];
   }
 
   execute = (liveFeed) => {
-    this.update();
+    if (!liveFeed) { return this.update().pop(); }
 
-    if (liveFeed) {
-      const final = this.computer.output.pop();
-      const finalScreen = this.computer.output.pop();
-      // const screens = this.lastOutput.map(v => String.fromCharCode(v)).join('').split('\n\n');
-      // screens.forEach((screen) => {
-      //   console.log(screen);
-      //   const now = new Date().getTime();
-      //   while (new Date().getTime() - now < 200) {
-      //     // do nothing
-      //   }
-      // });
+    // eslint-disable-next-line no-constant-condition
+    while (true) {
+      const output = this.update();
 
-      console.log(`Dust collected: ${final}`);
-      console.dir(finalScreen);
-      console.log(finalScreen.split('').map(v => String.fromCharCode(v)).join(''));
+      if (this.computer.halted) {
+        return output.pop();
+      }
+
+      const view = output.map(v => String.fromCharCode(v)).join('');
+      // eslint-disable-next-line no-console
+      console.log(view);
     }
   }
+
+  update = () => {
+    const { output } = (this.computer.started)
+      ? this.computer.resume()
+      : this.computer.execute(null, null, this.getInput());
+
+    this.computer.output = [];
+
+    return output;
+  }
+
+  convertOutput = output => output.map(v => String.fromCharCode(v))
+    .join('').split('\n').map(row => row.split(''));
 
   /*
     The ASCII definitions of the main routine and the movement functions may each
@@ -145,9 +157,7 @@ class ControlSystem {
       [Y, newLine],
     ];
 
-    const joined = instructions.reduce((acc, cur) => {
-      return acc.concat([newLine], cur);
-    });
+    const joined = instructions.reduce((acc, cur) => acc.concat([newLine], cur));
 
     const withCommas = joined.reduce((acc, cur, i) => {
       if (i !== 0 && cur !== newLine && acc[acc.length - 1] !== newLine) { acc.push(comma); }
@@ -164,47 +174,50 @@ class ControlSystem {
 
     return withCommas;
   }
-
-  update = () => {
-    (this.computer.started)
-      ? this.computer.resume(this.getInput())
-      : this.computer.execute(null, null, this.getInput());
-
-    // this.lastOutput = output;
-  }
-
-  convertOutput = () => this.lastOutput.map(v => String.fromCharCode(v))
-    .join('').split('\n').map(row => row.split(''));
-
-  print = () => {
-    const view = this.convertOutput();
-    console.log(view.map(row => row.join('')).join('\n'));
-  }
 }
 
 export const part1 = (input) => {
   const system = new ControlSystem(input);
+  system.computer.maxStoredOutput = 3000;
 
-  system.execute();
-  system.print();
-  return sumIntersections(system.convertOutput());
+  const output = system.update();
+  return sumIntersections(system.convertOutput(output));
+};
+
+export const crawlScaffold = (input) => {
+  const system = new ControlSystem(input);
+  system.computer.maxStoredOutput = 3000;
+
+  const output = system.update();
+  const bot = new Robot(system.convertOutput(output));
+  const instructions = bot.computeDirectInstructions();
+
+  return instructions.join(',');
 };
 
 export const part2 = (input) => {
   const system = new ControlSystem(input);
-  // system.computer.initialState[0] = 2;
-
-  // system.execute();
-  // system.print();
-
-  // const bot = new GoBot(system.convertOutput());
-  // const instructions = bot.computeDirectInstructions();
-  // console.log(instructions.join(','));
 
   system.computer.initialState[0] = 2;
-  system.computer.maxStoredOutputs = 10;
   system.computer.shouldLog = false;
 
-  system.execute(true);
-  system.print();
+  return system.execute();
+};
+
+export const part2Live = (input) => {
+  const system = new ControlSystem(input);
+
+  system.computer.initialState[0] = 2;
+  system.computer.maxStoredOutput = 3000;
+  system.computer.breakOnOutput = output => (
+    (output[output.length - 1] === 10 && output[output.length - 2] === 10)
+  );
+  system.computer.shouldLog = false;
+
+  const final = system.execute(true);
+
+  // eslint-disable-next-line no-console
+  console.log(`Dust collected: ${final}`);
+
+  return final;
 };

@@ -22,7 +22,7 @@ describe('IntCode', () => {
 
     test.each(inputs)('%p should return %p', (given, expected) => {
       const computer = new IntCode(program);
-      expect(computer.execute(null, null, [given]).lastOutput).toEqual(expected);
+      expect(computer.execute(null, null, [given]).output.pop()).toEqual(expected);
     });
   });
 
@@ -34,7 +34,7 @@ describe('IntCode', () => {
       [{ program: '3,3,1105,-1,9,1101,0,0,12,4,12,99,1', input: 5 }, 1],
     ])('%p => %p', (given, expected) => {
       const computer = new IntCode(given.program);
-      expect(computer.execute(null, null, [given.input]).lastOutput).toEqual(expected);
+      expect(computer.execute(null, null, [given.input]).output.pop()).toEqual(expected);
     });
   });
 
@@ -50,7 +50,7 @@ describe('IntCode', () => {
       [{ program: '3,3,1107,-1,8,3,4,3,99', input: 9 }, 0],
     ])('%p => %p', (given, expected) => {
       const computer = new IntCode(given.program);
-      const output = computer.execute(null, null, [given.input]).lastOutput;
+      const output = computer.execute(null, null, [given.input]).output.pop();
 
       expect(output).toEqual(expected);
     });
@@ -59,7 +59,7 @@ describe('IntCode', () => {
     describe('larger => 999', () => {
       test.each([1, 3, 5, 7])('%p => 999', (given) => {
         const computer = new IntCode(larger);
-        const output = computer.execute(null, null, [given]).lastOutput;
+        const output = computer.execute(null, null, [given]).output.pop();
 
         expect(output).toEqual(999);
       });
@@ -68,7 +68,7 @@ describe('IntCode', () => {
     describe('larger => 1000', () => {
       test.each([8])('%p => 1000', (given) => {
         const computer = new IntCode(larger);
-        const output = computer.execute(null, null, [given]).lastOutput;
+        const output = computer.execute(null, null, [given]).output.pop();
 
         expect(output).toEqual(1000);
       });
@@ -77,7 +77,7 @@ describe('IntCode', () => {
     describe('larger => 1001', () => {
       test.each([9, 15, 20, 51])('%p => 1001', (given) => {
         const computer = new IntCode(larger);
-        const output = computer.execute(null, null, [given]).lastOutput;
+        const output = computer.execute(null, null, [given]).output.pop();
 
         expect(output).toEqual(1001);
       });
@@ -116,14 +116,14 @@ describe('IntCode', () => {
     test('16 digit 1', () => {
       const computer = new IntCode('1102,34915192,34915192,7,4,7,99,0');
 
-      const output = computer.execute().lastOutput;
+      const output = computer.execute().output.pop();
       expect(output.toString(10).length).toEqual(16);
     });
 
     test('16 digit 2', () => {
       const computer = new IntCode('104,1125899906842624,99');
 
-      expect(computer.execute().lastOutput).toEqual(1125899906842624);
+      expect(computer.execute().output.pop()).toEqual(1125899906842624);
     });
   });
 });

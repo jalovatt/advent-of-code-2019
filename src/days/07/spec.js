@@ -15,11 +15,11 @@ describe(`Day ${__filename.match(/\/([^/]+)\/spec/)[1]} - ${title}`, () => {
         const program = '3,15,3,16,1002,16,10,16,1,16,15,15,4,15,99,0,0';
         const thrusters = new Array(5).fill(null).map(() => new IntCode(program));
 
-        const a = thrusters[0].execute(null, null, [4, 0]).lastOutput;
-        const b = thrusters[1].execute(null, null, [3, a]).lastOutput;
-        const c = thrusters[2].execute(null, null, [2, b]).lastOutput;
-        const d = thrusters[3].execute(null, null, [1, c]).lastOutput;
-        const e = thrusters[4].execute(null, null, [0, d]).lastOutput;
+        const a = thrusters[0].execute(null, null, [4, 0]).output.pop();
+        const b = thrusters[1].execute(null, null, [3, a]).output.pop();
+        const c = thrusters[2].execute(null, null, [2, b]).output.pop();
+        const d = thrusters[3].execute(null, null, [1, c]).output.pop();
+        const e = thrusters[4].execute(null, null, [0, d]).output.pop();
 
         expect(e).toEqual(43210);
       });
