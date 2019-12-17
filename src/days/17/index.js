@@ -26,23 +26,21 @@ class ControlSystem {
     this.lastOutput = [];
   }
 
-  execute = (n, liveFeed) => {
-    let LIMIT = n;
-    while (LIMIT) {
-      LIMIT -= 1;
+  execute = (liveFeed) => {
+    this.update();
 
-      this.update();
+    if (liveFeed) {
+      const final = this.lastOutput.pop();
+      const screens = this.lastOutput.map(v => String.fromCharCode(v)).join('').split('\n\n');
+      screens.forEach((screen) => {
+        console.log(screen);
+        const now = new Date().getTime();
+        while (new Date().getTime() - now < 200) {
+          // do nothing
+        }
+      });
 
-      if (liveFeed) {
-        const screens = this.lastOutput.map(v => String.fromCharCode(v)).join('').split('\n\n');
-        screens.forEach((screen) => {
-          console.log(screen);
-          const now = new Date().getTime();
-          while (new Date().getTime() - now < 200) {
-            // do nothing
-          }
-        });
-      }
+      console.log(`Dust collected: ${final}`);
     }
   }
 
@@ -51,76 +49,41 @@ class ControlSystem {
     contain at most 20 characters, not counting the newline.
   */
   getInput = () => {
-    // const sequence = [65, 44, 66, 44, 67, 10];
+    const A = 65;
+    const B = 66;
+    const C = 67;
+    const R = 82;
+    const L = 76;
+    const Y = 121;
+    const comma = 44;
+    const newLine = 10;
 
-    // // R , 6 , L , 1 2 , \n
-    // const a = [82, 44, 54, 44, 76, 44, 49, 50, 10];
-    // const b = [82, 44, 48, 10];
-    // const c = [76, 44, 48, 10];
-    // const feed = [121, 10];
-
-    // const expected = sequence.concat(a, b, c, feed);
-    // return sequence.concat(a, b, c, feed);
     const instructions = [
-      ['A', 'B', 'C'],
-      ['R', 6, 'L', 12],
-      ['R', 0],
-      ['L', 0],
+      [A, B, C],
+      [R, '6', L, '12'],
+      [R, '0'],
+      [L, '0'],
+      [Y, newLine],
     ];
 
     const joined = instructions.reduce((acc, cur) => {
-      return acc.concat(['\n'], cur);
+      return acc.concat([newLine], cur);
     });
 
-    // console.log(joined);
+    const withCommas = joined.reduce((acc, cur, i) => {
+      if (i !== 0 && cur !== newLine && acc[acc.length - 1] !== newLine) { acc.push(comma); }
 
-    const converted = joined.reduce((acc, v) => {
-      if (typeof v === 'string') {
-        acc.push(v.charCodeAt(0));
+      if (typeof cur === 'number') {
+        acc.push(cur);
       } else {
-        const digits = v.toString(10).split('');
-        acc = acc.concat(digits.map(v => parseInt(v.charCodeAt(0), 10)));
+        const digits = cur.toString(10).split('').map(c => c.charCodeAt(0));
+        digits.forEach(digit => acc.push(digit));
       }
 
       return acc;
     }, []);
 
-    const withCommas = converted.reduce((acc, cur) => {
-      if (cur !== 10 && acc[acc.length - 1] !== 10) { acc.push(44); }
-      acc.push(cur);
-
-      return acc;
-    }, []);
-
-    withCommas.shift();
-    withCommas.push(10);
-    withCommas.push(121);
-    withCommas.push(10);
-    console.log(withCommas);
-
     return withCommas;
-    // const b = ['L', 0, '\n'];
-    // const c = ['L', 0, '\n'];
-    // const feed = [121, '\n'];
-
-    // const full = sequence.concat(a, b, c, feed)
-    //   .reduce((acc, cur) => {
-    //     acc.push(cur);
-    //     acc.push(',');
-
-    //     return acc;
-    //   }, [])
-    //   .map(v => parseInt((typeof v === 'string'
-    //     ? v.charCodeAt(0)
-    //     : v), 10
-    //   ));
-
-    // full.pop();
-
-    // console.log(full.join(','));
-    // return full;
-
-    // A , B , C \n
   }
 
   update = () => {
@@ -143,7 +106,7 @@ class ControlSystem {
 export const part1 = (input) => {
   const system = new ControlSystem(input);
 
-  system.execute(1);
+  system.execute();
   system.print();
   return sumIntersections(system.convertOutput());
 };
@@ -152,6 +115,6 @@ export const part2 = (input) => {
   const system = new ControlSystem(input);
   system.computer.initialState[0] = 2;
 
-  system.execute(1, true);
+  system.execute(true);
   // system.print();
 };
