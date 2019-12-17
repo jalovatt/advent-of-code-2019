@@ -18,6 +18,8 @@ class IntCode {
     this.output = [];
     this.cursor = 0;
     this.relativeBase = 0;
+    this.maxStoredOutputs = 1000;
+    this.shouldLog = true;
   }
 
   operations = {
@@ -99,18 +101,24 @@ class IntCode {
     },
   };
 
+  pushLog = (msg) => {
+    if (this.shouldLog) { this.log.push(msg); }
+  }
+
   throw = (msg) => { throw new Error(`${msg}\n${this.log.slice(-1)}`); }
 
   pushOutput = (output) => {
     this.output.push(output);
+    if (this.output.length > this.maxStoredOutputs) { this.output.shift(); }
+
     this.lastOutput = output;
-    this.log.push(`output: ${output}`);
+    // this.log.push(`output: ${output}`);
   }
 
   loop = () => {
     // eslint-disable-next-line no-constant-condition
     while (true) {
-      this.log.push(`${this.cursor}: ${this.state.slice(this.cursor, this.cursor + 4)}`);
+      this.pushLog(`${this.cursor}: ${this.state.slice(this.cursor, this.cursor + 4)}`);
 
       const current = this.state[this.cursor];
       if (current === null || current === undefined) { this.throw(`No code found @ ${this.cursor}`); }
@@ -121,7 +129,7 @@ class IntCode {
       const [mode3, mode2, mode1, code] = parsed;
 
       //  Write
-      if (code === 3 && !this.inputs.length) { this.log.push('pausing for input'); break; }
+      if (code === 3 && !this.inputs.length) { this.pushLog('pausing for input'); break; }
 
       // Halt
       if (code === 99) { this.halted = true; break; }

@@ -1,3 +1,4 @@
+// eslint-disable-next-line max-classes-per-file
 import IntCode from '../../common/IntCode';
 
 export const sumIntersections = (view) => {
@@ -20,6 +21,81 @@ export const sumIntersections = (view) => {
   return total;
 };
 
+class GoBot {
+  constructor(field) {
+    this.field = field;
+    this.pos = this.findStart();
+    this.direction = 0;
+  }
+
+  findStart = () => {
+    for (let row = 0; row < this.field.length; row += 1) {
+      for (let column = 0; column < this.field[row].length; column += 1) {
+        if (this.field[row][column] === '^') { return { x: column, y: row }; }
+      }
+    }
+  }
+
+  nextPos = (direction) => {
+    const pos = { ...this.pos };
+    switch (direction) {
+      case 0: { pos.y -= 1; break; }
+      case 1: { pos.x += 1; break; }
+      case 2: { pos.y += 1; break; }
+      case 3: { pos.x -= 1; break; }
+      default: { break; }
+    }
+
+    return pos;
+  }
+
+  newDirection = direction => (this.direction + direction + 4) % 4;
+
+  findTurn = () => {
+    const r = this.newDirection(1);
+    const l = this.newDirection(-1);
+
+    const posR = this.nextPos(r);
+    const posL = this.nextPos(l);
+
+    if (this.field[posR.y]?.[posR.x] === '#') { return 1; }
+    if (this.field[posL.y]?.[posL.x] === '#') { return -1; }
+
+    // No choices; end of the scaffold
+    return 0;
+  }
+
+  countMoves = () => {
+    let moves = 0;
+    while (true) {
+      const nextPos = this.nextPos(this.direction);
+      if (this.field[nextPos.y]?.[nextPos.x] !== '#') { break; }
+
+      moves += 1;
+      this.pos = nextPos;
+    }
+
+    return moves;
+  }
+
+  computeDirectInstructions = () => {
+    const instructions = [];
+
+    while (true) {
+      const turn = this.findTurn();
+      if (!turn) { break; }
+
+      this.direction = this.newDirection(turn);
+      instructions.push((turn === 1) ? 'R' : 'L');
+
+      const moves = this.countMoves();
+      instructions.push(moves);
+    }
+
+    return instructions;
+  }
+}
+
 class ControlSystem {
   constructor(program) {
     this.computer = new IntCode(program);
@@ -30,17 +106,20 @@ class ControlSystem {
     this.update();
 
     if (liveFeed) {
-      const final = this.lastOutput.pop();
-      const screens = this.lastOutput.map(v => String.fromCharCode(v)).join('').split('\n\n');
-      screens.forEach((screen) => {
-        console.log(screen);
-        const now = new Date().getTime();
-        while (new Date().getTime() - now < 200) {
-          // do nothing
-        }
-      });
+      const final = this.computer.output.pop();
+      const finalScreen = this.computer.output.pop();
+      // const screens = this.lastOutput.map(v => String.fromCharCode(v)).join('').split('\n\n');
+      // screens.forEach((screen) => {
+      //   console.log(screen);
+      //   const now = new Date().getTime();
+      //   while (new Date().getTime() - now < 200) {
+      //     // do nothing
+      //   }
+      // });
 
       console.log(`Dust collected: ${final}`);
+      console.dir(finalScreen);
+      console.log(finalScreen.split('').map(v => String.fromCharCode(v)).join(''));
     }
   }
 
@@ -59,10 +138,10 @@ class ControlSystem {
     const newLine = 10;
 
     const instructions = [
-      [A, B, C],
-      [R, '6', L, '12'],
-      [R, '0'],
-      [L, '0'],
+      [A, A, B, C, B, C, B, C, B, A],
+      [R, '6', L, '12', R, '6'],
+      [L, '12', R, '6', L, '8', L, '12'],
+      [R, '12', L, '10', L, '10'],
       [Y, newLine],
     ];
 
@@ -87,11 +166,11 @@ class ControlSystem {
   }
 
   update = () => {
-    const { output } = (this.computer.started)
+    (this.computer.started)
       ? this.computer.resume(this.getInput())
       : this.computer.execute(null, null, this.getInput());
 
-    this.lastOutput = output;
+    // this.lastOutput = output;
   }
 
   convertOutput = () => this.lastOutput.map(v => String.fromCharCode(v))
@@ -113,8 +192,19 @@ export const part1 = (input) => {
 
 export const part2 = (input) => {
   const system = new ControlSystem(input);
+  // system.computer.initialState[0] = 2;
+
+  // system.execute();
+  // system.print();
+
+  // const bot = new GoBot(system.convertOutput());
+  // const instructions = bot.computeDirectInstructions();
+  // console.log(instructions.join(','));
+
   system.computer.initialState[0] = 2;
+  system.computer.maxStoredOutputs = 10;
+  system.computer.shouldLog = false;
 
   system.execute(true);
-  // system.print();
+  system.print();
 };
