@@ -1,108 +1,50 @@
 /* eslint-disable max-classes-per-file */
 const parseInput = input => input.split('\n').map(row => row.split(''));
 
-// Heap's algorithm
-// https://stackoverflow.com/a/37580979
-const permutations = (arr) => {
-  const result = [arr.slice()];
-  const c = new Array(arr.length).fill(0);
-  let i = 1;
-  let k;
-  let swap;
-
-  while (i < arr.length) {
-    if (c[i] < i) {
-      k = i % 2 && c[i];
-
-      swap = arr[i];
-      // eslint-disable-next-line no-param-reassign
-      arr[i] = arr[k];
-      // eslint-disable-next-line no-param-reassign
-      arr[k] = swap;
-
-      result.push(arr.slice());
-
-      c[i] += 1;
-      i = 1;
-    } else {
-      c[i] = 0;
-      i += 1;
-    }
-  }
-  return result;
-};
-
 class Node {
   constructor(name, value) {
     this.name = name;
     this.value = value;
-    this.children = [];
-    this.parent = null;
-  }
-
-  getAncestors = () => {
-    const ancestors = new Map();
-    ancestors.set(this, 0);
-
-    let current = this.parent;
-    let distance = 0;
-
-    while (current) {
-      distance += 1;
-      ancestors.set(current, distance);
-      current = current.parent;
-    }
-
-    return ancestors;
-  }
-
-  findLca = (otherAncestors) => {
-    if (!this.parent) { return [this, 0]; }
-
-    let current = this;
-    let distance = 0;
-
-    while (true) {
-      if (!current.parent || otherAncestors.has(current)) { return [current, distance]; }
-
-      distance += 1;
-      current = current.parent;
-    }
+    this.edges = new Set();
   }
 
   findDistanceTo = (other) => {
-    const ancestorsMap = this.getAncestors();
-    const [lca, otherDistanceToLca] = other.findLca(ancestorsMap);
+    const ancestors = this.getAncestors();
+    const [lca, otherDistanceToLca] = other.findLca(ancestors);
 
-    return ancestorsMap.get(lca) + otherDistanceToLca;
+    return ancestors.get(lca) + otherDistanceToLca;
   }
 }
 
-class Tree {
+class Graph {
   constructor() {
-    this.nodes = [];
+    this.nodes = new Map();
+    this.points = new Map();
     this.objects = {};
   }
 
-  add = (key, value) => {
+  node = (x, y, value) => {
+    const key = `${x},${y}`;
+    if (this.nodes.has(key)) { return this.nodes.get(key); }
+
     const node = new Node(key, value);
-    this.nodes.push(node);
+    this.nodes.set(key, node);
+    this.points.set(node, { x, y });
     if (value !== '#' && value !== '.') { this.objects[value] = node; }
 
     return node;
   }
 
-  connect = (parent, child) => {
-    parent.children.push(child);
-    // eslint-disable-next-line no-param-reassign
-    child.parent = parent;
+  connect = (a, b) => {
+    a.edges.add(b);
+    b.edges.add(a);
   }
 }
 
 class Maze {
   constructor(input) {
     this.field = parseInput(input);
-    this.tree = this.buildTree();
+    this.graph = this.buildGraph();
   }
 
   // eslint-disable-next-line consistent-return
@@ -114,128 +56,144 @@ class Maze {
     }
   }
 
-  buildTree = () => {
-    const tree = new Tree();
-    const { x: ox, y: oy } = this.findOrigin();
-    let current = { x: ox, y: oy, node: tree.add(`${ox},${oy}`, '@') };
-    const visited = { [`${current.x},${current.y}`]: current.node };
+  buildGraph = () => {
+    const graph = new Graph();
+    const toVisit = [];
+
+    {
+      const { x, y } = this.findOrigin();
+      const origin = graph.node(x, y, this.field[y][x]);
+      toVisit.push(origin);
+    }
+
+    const visitedNodes = new Set();
 
     // eslint-disable-next-line no-constant-condition
-    while (true) {
+    while (toVisit.length) {
+      const current = toVisit.pop();
+      visitedNodes.add(current);
+      const { x, y } = graph.points.get(current);
+
       const choices = [
-        { x: current.x, y: current.y - 1 },
-        { x: current.x, y: current.y + 1 },
-        { x: current.x - 1, y: current.y },
-        { x: current.x + 1, y: current.y },
+        { x, y: y - 1 },
+        { x, y: y + 1 },
+        { x: x - 1, y },
+        { x: x + 1, y },
       ];
 
-      const legal = choices.filter(c => (
+      choices.filter(c => (
         (this.field[c.y]?.[c.x] !== '#')
         && c.x >= 0
         && c.x <= this.field[0].length
         && c.y >= 0
         && c.y <= this.field.length
-      ));
+      )).forEach((c) => {
+        const node = graph.node(c.x, c.y, this.field[c.y][c.x]);
+        graph.connect(current, node);
 
-      const unexplored = legal.filter(choice => !visited[`${choice.x},${choice.y}`]);
-
-      if (unexplored.length) {
-        const { x, y } = unexplored[Math.floor(Math.random() * unexplored.length)];
-
-        const value = this.field[y][x];
-        const node = tree.add(`${x},${y}`, value);
-
-        tree.connect(current.node, node);
-        visited[`${x},${y}`] = node;
-
-        current = { x, y, node };
-      } else {
-        // We're done!
-        if (!current.node.parent) { break; }
-
-        const [key, node] = Object.entries(visited)
-          // eslint-disable-next-line no-loop-func
-          .find(([, n]) => n === current.node.parent);
-        const [, x, y] = key.match(/(\d+),(\d+)/).map(n => parseInt(n, 10));
-        current = { x, y, node };
-      }
+        if (!visitedNodes.has(node)) { toVisit.push(node); }
+      });
     }
 
-    return tree;
+    return graph;
   }
 
-  walkSequence = (seq) => {
-    seq.unshift('@');
+  keyFromDoor = door => String.fromCharCode(door.charCodeAt(0) + 32);
 
-    let steps = 0;
-    const keysFound = {};
+  getPath = (a, b) => {
+    // console.log(`path from ${a.value} to ${b.value}`);
+    const sequences = [{ nodes: [a], doors: [], keys: [] }];
 
-    for (let i = 0; i <= seq.length - 2; i += 1) {
-      const a = this.tree.objects[seq[i]];
-      const b = this.tree.objects[seq[i + 1]];
+    let found;
+    while (!found) {
+      const current = sequences.shift();
 
-      const [lca] = a.findLca(b.getAncestors());
-
-      let didA = false;
-
-      // Get the path
-      const pathA = [];
-      const pathB = [];
-      let cur = a;
-      while (cur !== lca) {
-        pathA.push(cur);
-        cur = cur.parent;
-      }
-      pathA.push(lca);
-
-      cur = b;
-      while (cur !== lca) {
-        pathB.unshift(cur);
-        cur = cur.parent;
-      }
-
-      const path = pathA.concat(pathB);
-
-      for (let step = 1; step < path.length; step += 1) {
-        steps += 1;
-        const val = path[step - 1].value;
-
-        if (val) {
-          const isDoor = val.match(/([A-Z])/);
-
-          if (isDoor) {
-            const key = String.fromCharCode(val.charCodeAt(0) + 32);
-            if (!keysFound[key]) {
-              return 0;
-            }
+      const node = current.nodes[current.nodes.length - 1];
+      // console.log(`at ${node.value}`);
+      if (node === b) {
+        found = current;
+      } else {
+        const adjacents = node.edges;
+        // eslint-disable-next-line no-loop-func
+        adjacents.forEach((adj) => {
+          // console.log(`adding step to ${adj.value}`);
+          if (current.nodes[current.nodes.length - 1] === adj || current.nodes.includes(adj)) {
+            return;
           }
 
-          if (val.match(/[a-z]/)) {
-            keysFound[val] = true;
-          }
-        }
+          const doors = (node.value.match(/[A-Z]/)) ? [...current.doors, node.value] : current.doors;
+          const keys = (node.value.match(/[a-z]/)) ? [...current.keys, node.value] : current.keys;
 
-        if (cur.parent === lca && !didA) {
-          didA = true;
-          cur = b;
-        }
+          sequences.push({
+            nodes: [...current.nodes, adj],
+            doors,
+            keys,
+          });
+        });
       }
     }
 
-    return steps;
+    return { ...found, length: found.nodes.length - 1 };
+  }
+
+  getAllPaths = () => {
+    // console.dir(this.graph.objects);
+    const pathObjects = Object.entries(this.graph.objects)
+      .filter(o => o[0].charCodeAt(0) > 96 || o[0].charCodeAt(0) === 64);
+
+    const allPaths = {};
+    for (let a = 0; a < (pathObjects.length - 1); a += 1) {
+      for (let b = a + 1; b < pathObjects.length; b += 1) {
+        const path = this.getPath(pathObjects[a][1], pathObjects[b][1]);
+
+        allPaths[`${pathObjects[a][0]}${pathObjects[b][0]}`] = path;
+        allPaths[`${pathObjects[b][0]}${pathObjects[a][0]}`] = path;
+      }
+    }
+
+    return allPaths;
+  }
+
+  pathsFrom = (paths, current, visited) => Object.entries(paths).filter(([k, { doors }]) => (
+    k[0] === current
+    && !visited[k[1]]
+    && doors.every(d => visited[this.keyFromDoor(d)])
+  )).map(p => p[0]);
+
+  cachedSequences = {}
+
+  findShortestSequence = (paths, current = '@', visited = { '@': true }, currentLength = 0, shortest = Number.MAX_SAFE_INTEGER) => {
+    const pathKey = `${current}${Object.keys(visited).sort().join('')}`;
+
+    const cached = this.cachedSequences[pathKey];
+    if (cached && currentLength >= cached.currentLength) { return shortest; }
+
+    const nextPaths = cached?.nextPaths || this.pathsFrom(paths, current, visited);
+    this.cachedSequences[pathKey] = { nextPaths, currentLength };
+
+    if (!nextPaths.length) { return currentLength; }
+
+    return nextPaths.reduce((acc, path) => {
+      const { keys, length } = paths[path];
+      if ((currentLength + length) >= acc) { return acc; }
+
+      const subsequence = this.findShortestSequence(
+        paths,
+        path[1],
+        { ...visited, ...keys, [current]: true, [path[1]]: true },
+        currentLength + length,
+        acc,
+      );
+
+      return (subsequence < acc) ? subsequence : acc;
+    }, shortest);
   }
 
   shortestSequence = () => {
-    const objects = Object.keys(this.tree.objects).filter(o => o !== '@');
-    // const allSequences = permutations(objects);
+    const paths = this.getAllPaths();
+    // console.dir(paths);
 
-    // return allSequences.reduce((acc, cur) => {
-    //   const steps = this.walkSequence(cur);
-
-    //   return (steps && (!acc.steps || steps < acc.steps))
-    //     ? { sequence: cur, steps }
-    //     : acc;
-    // }, { sequence: null, steps: 0 });
+    return this.findShortestSequence(paths);
   }
 
   print = () => {
@@ -248,12 +206,10 @@ class Maze {
   }
 }
 
+// eslint-disable-next-line import/prefer-default-export
 export const part1 = (input) => {
   const maze = new Maze(input);
-  maze.print();
+  // maze.print();
 
-  const shortest = maze.shortestSequence();
-  console.log('Shortest sequence:', shortest.sequence, `(${shortest.steps} steps)`);
-
-  return shortest.steps;
+  return maze.shortestSequence();
 };
