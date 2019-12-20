@@ -1,18 +1,20 @@
 /* eslint-disable max-classes-per-file */
 const parseInput = input => input.split('\n').map(row => row.split(''));
 
+// eslint-disable-next-line consistent-return
+const findOrigin = (field) => {
+  for (let row = 0; row < field.length; row += 1) {
+    for (let col = 0; col < field[0].length; col += 1) {
+      if (field[row][col] === '@') { return { x: col, y: row }; }
+    }
+  }
+};
+
 class Node {
   constructor(name, value) {
     this.name = name;
     this.value = value;
     this.edges = new Set();
-  }
-
-  findDistanceTo = (other) => {
-    const ancestors = this.getAncestors();
-    const [lca, otherDistanceToLca] = other.findLca(ancestors);
-
-    return ancestors.get(lca) + otherDistanceToLca;
   }
 }
 
@@ -42,18 +44,9 @@ class Graph {
 }
 
 class Maze {
-  constructor(input) {
-    this.field = parseInput(input);
+  constructor(field) {
+    this.field = field;
     this.graph = this.buildGraph();
-  }
-
-  // eslint-disable-next-line consistent-return
-  findOrigin = () => {
-    for (let row = 0; row < this.field.length; row += 1) {
-      for (let col = 0; col < this.field[0].length; col += 1) {
-        if (this.field[row][col] === '@') { return { x: col, y: row }; }
-      }
-    }
   }
 
   buildGraph = () => {
@@ -61,7 +54,7 @@ class Maze {
     const toVisit = [];
 
     {
-      const { x, y } = this.findOrigin();
+      const { x, y } = findOrigin(this.field);
       const origin = graph.node(x, y, this.field[y][x]);
       toVisit.push(origin);
     }
@@ -101,22 +94,19 @@ class Maze {
   keyFromDoor = door => String.fromCharCode(door.charCodeAt(0) + 32);
 
   getPath = (a, b) => {
-    // console.log(`path from ${a.value} to ${b.value}`);
     const sequences = [{ nodes: [a], doors: [], keys: [] }];
 
     let found;
     while (!found) {
       const current = sequences.shift();
-
       const node = current.nodes[current.nodes.length - 1];
-      // console.log(`at ${node.value}`);
+
       if (node === b) {
         found = current;
       } else {
         const adjacents = node.edges;
         // eslint-disable-next-line no-loop-func
         adjacents.forEach((adj) => {
-          // console.log(`adding step to ${adj.value}`);
           if (current.nodes[current.nodes.length - 1] === adj || current.nodes.includes(adj)) {
             return;
           }
@@ -137,7 +127,6 @@ class Maze {
   }
 
   getAllPaths = () => {
-    // console.dir(this.graph.objects);
     const pathObjects = Object.entries(this.graph.objects)
       .filter(o => o[0].charCodeAt(0) > 96 || o[0].charCodeAt(0) === 64);
 
@@ -189,11 +178,10 @@ class Maze {
     }, shortest);
   }
 
-  shortestSequence = () => {
+  shortestSequence = (withKeys) => {
     const paths = this.getAllPaths();
-    // console.dir(paths);
 
-    return this.findShortestSequence(paths);
+    return this.findShortestSequence(paths, undefined, (withKeys ? { ...withKeys, '@': true } : undefined));
   }
 
   print = () => {
@@ -202,14 +190,46 @@ class Maze {
       return acc;
     }, []).join('\n');
 
+    // eslint-disable-next-line no-console
     console.log(out);
   }
 }
 
-// eslint-disable-next-line import/prefer-default-export
+// TODO: Generate the quadrants/@s/#s programmatically from the original input
+const splitQuadrants = (field) => {
+  const lowerMax = Math.ceil(field.length / 2);
+  const upperMin = Math.floor(field.length / 2);
+  const quadrants = [
+    field.slice(0, lowerMax).map(row => row.slice(0, lowerMax)),
+    field.slice(0, lowerMax).map(row => row.slice(upperMin)),
+    field.slice(upperMin).map(row => row.slice(upperMin)),
+    field.slice(upperMin).map(row => row.slice(0, lowerMax)),
+  ].map(quadrant => new Maze(quadrant));
+
+  quadrants.forEach((quadrant, i) => {
+    // eslint-disable-next-line no-param-reassign
+    quadrant.hasKeys = quadrants.filter((_, j) => j !== i).reduce((acc, cur) => {
+      Object.keys(cur.graph.objects).forEach((obj) => {
+        if (obj.match(/[a-z]/)) { acc[obj] = true; }
+      });
+      return acc;
+    }, {});
+  });
+
+  return quadrants;
+};
+
 export const part1 = (input) => {
-  const maze = new Maze(input);
-  // maze.print();
+  const field = parseInput(input);
+  const maze = new Maze(field);
 
   return maze.shortestSequence();
+};
+
+export const part2 = (input) => {
+  const field = parseInput(input);
+
+  return splitQuadrants(field)
+    .map(q => q.shortestSequence(q.hasKeys))
+    .reduce((acc, cur) => acc + cur);
 };
