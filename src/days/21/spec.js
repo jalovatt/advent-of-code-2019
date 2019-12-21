@@ -1,7 +1,7 @@
 import loadText from '../../utilities/loadText';
 import { solve } from '.';
 
-const title = '';
+const title = 'Springdroid Adventure';
 
 const input = loadText('input.txt');
 

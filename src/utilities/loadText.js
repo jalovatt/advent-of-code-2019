@@ -1,12 +1,13 @@
 import fs from 'fs';
 import path from 'path';
 
-export default (fn) => {
+export default (fn, trim = true) => {
   const { stack } = Error();
   const line = stack.split('\n')[2];
   const callingPath = line.match(/\((.+)\/[^/]+$/)?.[1];
 
-  return fs.readFileSync(path.resolve(callingPath, fn))
-    .toString('utf-8')
-    .trim();
+  const str = fs.readFileSync(path.resolve(callingPath, fn))
+    .toString('utf-8');
+
+  return trim ? str.trim() : str;
 };
