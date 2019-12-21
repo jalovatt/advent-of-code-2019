@@ -3,6 +3,11 @@ import loadText from '../../utilities/loadText';
 
 const program = loadText('input.txt');
 
+const printField = (field) => {
+  // eslint-disable-next-line no-console
+  console.log(field.map(row => row.map(cell => (cell ? '#' : '.')).join('')).join('\n'));
+};
+
 class TractorBeam {
   constructor(n) {
     this.n = n;
@@ -11,7 +16,7 @@ class TractorBeam {
   }
 
   execute = () => {
-    const field = new Array(this.n).fill(null).map(_ => new Array(this.n));
+    const field = new Array(this.n).fill(null).map(() => new Array(this.n));
 
     // eslint-disable-next-line no-constant-condition
     while (this.inputPositions.length) {
@@ -43,10 +48,6 @@ class TractorBeam {
       // }
     }
   }
-
-  print = (field) => {
-    console.log(field.map(row => row.map(cell => (cell ? '#' : '.')).join('')).join('\n'));
-  }
 }
 export const part1 = (fieldSize) => {
   const tb = new TractorBeam(fieldSize);
@@ -54,9 +55,7 @@ export const part1 = (fieldSize) => {
   return tb.countPoints(field);
 };
 
-export const part2 = (targetSize) => {
-  const tb = new TractorBeam(targetSize * 4);
-  const field = tb.execute();
-  tb.print(field);
+export const part2 = (field, targetSize) => {
+  printField(field);
   // return tb.fit(field, targetSize);
 };
