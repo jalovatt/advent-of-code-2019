@@ -161,6 +161,7 @@ class IntCode {
     this.output = [];
 
     this.started = true;
+    this.halted = false;
 
     this.loop();
 
@@ -168,6 +169,7 @@ class IntCode {
   };
 
   resume = (inputs) => {
+    if (!this.started) { this.throw('Not started; cannot resume'); }
     if (this.halted) { this.throw('Halted; cannot resume'); }
 
     if (inputs) { inputs.forEach(v => this.inputs.push(v)); }
