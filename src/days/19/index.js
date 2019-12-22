@@ -8,6 +8,22 @@ const printField = (field) => {
   console.log(field.map(row => row.map(cell => (cell ? '#' : '.')).join('')).join('\n'));
 };
 
+const findFitCoords = (field, targetSize) => {
+  for (let y = (targetSize * 2); y < field.length; y += 1) {
+    const row = field[y];
+    if (row.filter(c => !!c).length >= targetSize) {
+      const rightCol = row.lastIndexOf(1);
+
+      if (field[y + targetSize - 1]?.[rightCol - targetSize + 1] === 1) {
+        const x = field[y + targetSize - 1].indexOf(1);
+        return { x, y };
+      }
+    }
+  }
+
+  throw new Error(`This field can't fit a ${targetSize}-unit square`);
+};
+
 class TractorBeam {
   constructor(n) {
     this.n = n;
@@ -35,27 +51,24 @@ class TractorBeam {
       return acc;
     }, 0);
   }
-
-  fit = (field, targetSize) => {
-    for (let x = targetSize * 2; x < (field.length - targetSize); x += 1) {
-      // for (let y = targetSize * 2; y < (field.length - targetSize); y += 1) {
-        if (field[x][x]
-          && field[x][x + targetSize]
-          && field[x + targetSize][x]
-        ) {
-          return
-        }
-      // }
-    }
-  }
 }
+
 export const part1 = (fieldSize) => {
   const tb = new TractorBeam(fieldSize);
   const field = tb.execute();
   return tb.countPoints(field);
 };
 
-export const part2 = (field, targetSize) => {
-  printField(field);
+export const part2test = (field, targetSize) => {
+  // printField(field);
+  const coords = findFitCoords(field, targetSize);
+  return [coords.x, coords.y, (coords.x * 10000 + coords.y)];
   // return tb.fit(field, targetSize);
+};
+
+export const part2 = () => {
+  const tb = new TractorBeam(300);
+  const field = tb.execute();
+  const coords = findFitCoords(field, 100);
+  return [coords.x, coords.y, (coords.x * 10000 + coords.y)];
 };
