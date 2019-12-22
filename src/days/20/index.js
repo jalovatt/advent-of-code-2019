@@ -33,8 +33,9 @@ class Graph {
 }
 
 class Maze {
-  constructor(field) {
+  constructor(field, recursive) {
     this.field = field;
+    this.recursive = recursive;
     this.graph = new Graph();
 
     this.portals = this.findPortals();
@@ -67,13 +68,7 @@ class Maze {
 
       const valid = choices.filter(c => (
         (this.field[c.y]?.[c.x] === '.')
-        // && c.x >= 0
-        // && c.x < this.field[0].length
-        // && c.y >= 0
-        // && c.y < this.field.length
       ));
-
-
 
       valid.forEach((c) => {
         const node = this.graph.node(c.x, c.y, '.');
@@ -84,34 +79,63 @@ class Maze {
     }
   }
 
-  getPath = (a, b) => {
-    const sequences = [[a]];
+  getPath = () => {
+    const AA = this.portals.AA[0];
+    const a = this.graph.nodes.get(`${AA.x},${AA.y}`);
 
-    console.dir(this.portals);
+    const ZZ = this.portals.ZZ[0];
+    const b = this.graph.nodes.get(`${ZZ.x},${ZZ.y}`);
+
+    const initial = [a];
+
+    initial.depth = 0;
+    initial.maxDepth = 0;
+    initial.portalCount = 0;
+
+    const sequences = [initial];
+
+    // Minimize runtime by stopping any search paths that get too far off-track
+    const MAX_DEPTH = 25;
+
     let foundPath;
-    while (!foundPath) {
+    while (!foundPath && sequences.length) {
       const current = sequences.shift();
       const node = current[current.length - 1];
 
-      if (node === b) {
+      if (node === b && current.depth === 0) {
         foundPath = current;
       } else {
         const adjacents = node.edges;
 
         // eslint-disable-next-line no-loop-func
         adjacents.forEach((adj) => {
-          if (current[current.length - 1] === adj || current.includes(adj)) {
+          if (current[current.length - 2] === adj) {
             return;
           }
 
-          const newSequence = [...current];
-          if (node.value.isPortal && adj.value.isPortal) { newSequence.pop(); }
-          newSequence.push(adj);
+          const newSequence = [...current, adj];
+
+          const { portalType } = node;
+          if (portalType === -1 && current.depth === 0) { return; }
+
+          if (portalType && adj.portalType) {
+            newSequence.depth = current.depth + portalType;
+            newSequence.portalCount = current.portalCount + 1;
+            newSequence.maxDepth = Math.max(current.maxDepth, newSequence.depth);
+          } else {
+            newSequence.depth = current.depth;
+            newSequence.portalCount = current.portalCount;
+            newSequence.maxDepth = current.maxDepth;
+          }
+
+          if (newSequence.depth > MAX_DEPTH) { return; }
+
           sequences.push(newSequence);
         });
       }
     }
 
+    if (!foundPath) { throw new Error('Ran out of search paths. Try increasing MAX_DEPTH?'); }
     return foundPath;
   }
 
@@ -121,16 +145,8 @@ class Maze {
     const portals = {};
 
     for (let row = 0; row < field.length; row += 1) {
-      // if (row < 2) {
-      //   console.log(field[row]);
-      // }
       for (let col = 0; col < field[row].length; col += 1) {
         const cur = field[row][col];
-        // if (cur === 'V') {
-        //   console.log(`found a V at ${col},${row}. right: ${field[row][col + 1]}, down: ${field[row + 1]?.[col]}`);
-        // }
-
-        // if (row < 2) { console.log(`${col},${row} = '${field[row][col]}'`); }
 
         if (cur?.match(/[A-Z]/)) {
           if (field[row][col + 1]?.match(/[A-Z]/)) {
@@ -156,16 +172,26 @@ class Maze {
   }
 
   addPortalEdges = () => {
-    Object.values(this.portals).forEach(([a, b]) => {
-      const nodeA = this.graph.node(a.x, a.y, '.');
+    Object.entries(this.portals).forEach(([name, [a, b]]) => {
+      const nodeA = this.graph.node(a.x, a.y, name);
 
       // For AA and ZZ
       if (!b) { return; }
 
-      const nodeB = this.graph.node(b.x, b.y, '.');
+      const nodeB = this.graph.node(b.x, b.y, name);
 
-      nodeA.isPortal = true;
-      nodeB.isPortal = true;
+      if (this.recursive) {
+        const outsideColA = (a.x === 2 || a.x === this.field[a.y].length - 3);
+        const outsideRowA = (a.y === 2 || a.y === this.field.length - 3);
+        nodeA.portalType = (outsideColA || outsideRowA) ? -1 : 1;
+
+        const outsideColB = (b.x === 2 || b.x === this.field[b.y].length - 3);
+        const outsideRowB = (b.y === 2 || b.y === this.field.length - 3);
+        nodeB.portalType = (outsideColB || outsideRowB) ? -1 : 1;
+      } else {
+        nodeA.portalType = 0;
+        nodeB.portalType = 0;
+      }
 
       this.graph.connect(nodeA, nodeB);
     });
@@ -199,9 +225,17 @@ export const part1 = (input) => {
 };
 
 export const part2 = (input) => {
-  // const field = parseInput(input);
+  const field = parseInput(input);
+  const maze = new Maze(field, true);
 
-  // return splitQuadrants(field)
-  //   .map(q => q.shortestSequence(q.hasKeys))
-  //   .reduce((acc, cur) => acc + cur);
+  const a = maze.portals.AA[0];
+  const keyA = `${a.x},${a.y}`;
+  const AA = maze.graph.nodes.get(keyA);
+
+  const b = maze.portals.ZZ[0];
+  const keyZ = `${b.x},${b.y}`;
+  const ZZ = maze.graph.nodes.get(keyZ);
+
+  const path = maze.getPath(AA, ZZ);
+  return path.length - 1;
 };
