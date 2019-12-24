@@ -1,84 +1,69 @@
 import IntCode from '../../common/IntCode';
 
-const printField = (field) => {
-  // eslint-disable-next-line no-console
-  console.log(field.map(row => row.map(cell => (cell ? '#' : '.')).join('')).join('\n'));
-};
+export const part1 = (program, fieldSize, printField) => {
+  const computer = new IntCode(program);
 
-class TractorBeam {
-  constructor(program, n) {
-    this.n = n;
-    this.computer = new IntCode(program);
-    this.inputPositions = new Array(n * n).fill(null).map((_, i) => [i % n, Math.floor(i / n)]);
-  }
+  let count = 0;
 
-  execute = () => {
-    const field = new Array(this.n).fill(null).map(() => new Array(this.n));
+  const field = [];
+  for (let y = 0; y < fieldSize; y += 1) {
+    if (printField && !field[y]) { field[y] = []; }
 
-    // eslint-disable-next-line no-constant-condition
-    while (this.inputPositions.length) {
-      const pos = this.inputPositions.pop();
-      const { output } = this.computer.execute(null, null, [...pos]);
+    for (let x = 0; x < fieldSize; x += 1) {
+      const { output } = computer.execute(null, null, [x, y]);
 
-      [field[pos[0]][pos[1]]] = output;
-    }
+      count += output[0];
 
-    return field;
-  }
-
-  countPoints = (field) => {
-    return field.reduce((acc, row) => {
-      row.forEach((point) => { acc += point; });
-      return acc;
-    }, 0);
-  }
-}
-
-export const part1 = (program, fieldSize) => {
-  const tb = new TractorBeam(program, fieldSize);
-  const field = tb.execute();
-  return tb.countPoints(field);
-};
-
-export const part2test = (field, targetSize) => {
-  // printField(field);
-  const coords = findFitCoords(field, targetSize);
-  return [coords.x, coords.y, (coords.x * 10000 + coords.y)];
-  // return tb.fit(field, targetSize);
-};
-
-const findFitCoords = (field, targetSize) => {
-  for (let y = (targetSize * 2); y < field.length; y += 1) {
-    const row = field[y];
-    if (row.filter(c => !!c).length >= targetSize) {
-      const rightCol = row.lastIndexOf(1);
-
-      if (field[y + targetSize - 1]?.[rightCol - targetSize + 1] === 1) {
-        const x = field[y + targetSize - 1].indexOf(1);
-        return { x, y };
+      if (printField) {
+        field[y][x] = output[0] ? '#' : '.';
       }
     }
   }
 
-  throw new Error(`This field can't fit a ${targetSize}-unit square`);
+  if (printField) {
+    // eslint-disable-next-line no-console
+    console.log(field.map(row => row.join('')).join('\n'));
+  }
+
+  return count;
 };
 
-export const part2 = (program, TARGET_SIZE = 100) => {
+const printFieldAt = (computer, xBase, yBase, size) => {
+  const PADDING = 20;
+  const field = [];
+  for (let y = yBase - PADDING; y < (yBase + size + PADDING); y += 1) {
+    if (!field[y]) { field[y] = []; }
+    for (let x = xBase - PADDING; x < (xBase + size + PADDING); x += 1) {
+      const [val] = computer.execute(null, null, [x, y]).output;
+
+      field[y][x] = (x >= xBase && x < xBase + size && y >= yBase && y < yBase + size && 'O')
+        || (val && '#')
+        || '.';
+    }
+  }
+
+  return field
+    .slice(yBase - PADDING, yBase + size + PADDING + 1)
+    .map(row => row.slice(xBase - PADDING, xBase + size + PADDING + 1).join(''))
+    .join('\n');
+};
+
+export const part2 = (program, TARGET_SIZE = 100, printField) => {
   const computer = new IntCode(program);
 
   const shipWillFitAt = (x, y) => (
-    computer.execute(null, null, [x, y]).output[0]
-    && computer.execute(null, null, [x + TARGET_SIZE - 1, y]).output[0]
+    computer.execute(null, null, [x + TARGET_SIZE - 1, y]).output[0]
     && computer.execute(null, null, [x, y + TARGET_SIZE - 1]).output[0]
+    && computer.execute(null, null, [x, y]).output[0]
   );
 
   // To fit the example input
-  const SLOPE_CHECK = 33;
+  const CHECK = 20;
   let slopeLower;
   {
     let x = 0;
     while (!slopeLower) {
-      if (computer.execute(null, null, [x, SLOPE_CHECK]).output[0]) { slopeLower = SLOPE_CHECK / x; }
+      if (computer.execute(null, null, [x, CHECK]).output[0]) { slopeLower = CHECK / x; }
       x += 1;
     }
   }
@@ -87,7 +72,7 @@ export const part2 = (program, TARGET_SIZE = 100) => {
   {
     let y = 0;
     while (!slopeUpper) {
-      if (computer.execute(null, null, [SLOPE_CHECK, y]).output[0]) { slopeUpper = y / SLOPE_CHECK; }
+      if (computer.execute(null, null, [CHECK, y]).output[0]) { slopeUpper = y / CHECK; }
       y += 1;
     }
   }
@@ -95,31 +80,35 @@ export const part2 = (program, TARGET_SIZE = 100) => {
   const slope = (slopeUpper + slopeLower) / 2;
 
   let point;
-  let x = TARGET_SIZE;
+  let x = 2 * TARGET_SIZE;
   while (!point) {
     const y = Math.floor(x * slope);
     if (shipWillFitAt(x, y)) { point = { x, y }; }
-    x += 1;
+    x += TARGET_SIZE;
   }
 
+  // eslint-disable-next-line no-constant-condition
   while (true) {
-    const possible = [
-      { x: point.x - 1, y: point.y },
+    const next = [
+      { x: point.x - 2, y: point.y - 2 },
+      { x: point.x - 1, y: point.y - 2 },
+      { x: point.x - 2, y: point.y - 1 },
       { x: point.x - 1, y: point.y - 1 },
+      { x: point.x - 1, y: point.y },
       { x: point.x, y: point.y - 1 },
-      { x: point.x + 1, y: point.y - 1 },
-      { x: point.x - 1, y: point.y + 1},
     ]
-      .map(pos => ({ ...pos, fit: shipWillFitAt(pos.x, pos.y) }));
+      .find(pos => shipWillFitAt(pos.x, pos.y));
 
-    // console.log('----------');
-    // console.log(point);
-    // console.log(JSON.stringify(possible, null, 2));
+    if (!next) { break; }
+    point = next;
+  }
 
-    const willFit = possible.filter(pos => !!pos.fit);
-    if (!willFit.length) { break; }
-
-    [point] = willFit.sort((a, b) => (a.x ** 2 + a.y ** 2) - (b.x ** 2 + b.y ** 2));
+  if (printField) {
+    const out = printFieldAt(computer, point.x, point.y, TARGET_SIZE);
+    // eslint-disable-next-line global-require
+    require('fs').writeFileSync(`${__dirname}/printout.txt`, out);
+    // eslint-disable-next-line no-console
+    console.log(`printed field at ${point.x},${point.y} to ./printout.txt`);
   }
 
   return [point.x, point.y, (point.x * 10000 + point.y)];
