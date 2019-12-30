@@ -1,4 +1,4 @@
-import { part1, Field } from '.';
+import { part1, part2, Field, RecursiveField } from '.';
 
 const title = 'Planet of Discord';
 
@@ -43,21 +43,37 @@ describe(`Day ${__filename.match(/\/([^/]+)\/spec/)[1]} - ${title}`, () => {
     });
   });
 
-  xdescribe('Part 2', () => {
-    describe('Tests', () => {
+  describe('Part 2', () => {
+    const initial = '....##..#.#..##..#..#....';
+
+    describe('Adjacent cells with recursion', () => {
+      const field = new RecursiveField(initial);
+
       test.each([
-        [1, 2],
+        [18, 4],
+        [6, 4],
+        [3, 4],
+        [4, 4],
+        [13, 8],
       ])('%p => %p', (given, expected) => {
-        expect(solve(given)).toEqual(expected);
+        expect(field.adjacentCells(given, 0).length).toEqual(expected);
       });
     });
 
-    // describe('Solution', () => {
-    //   const solution = solve(input);
+    describe('Counting', () => {
+      test.each([
+        [10, 99],
+      ])('%p => %p', (given, expected) => {
+        expect(part2(initial, given)).toEqual(expected);
+      });
+    });
 
-    //   test(`${solution}`, () => {
-    //     expect(solution).toEqual(true);
-    //   });
-    // });
+    describe('Solution', () => {
+      const solution = part2(input, 200);
+
+      test(`${solution}`, () => {
+        expect(solution).toEqual(2025);
+      });
+    });
   });
 });
