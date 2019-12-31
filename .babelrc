@@ -1,3 +1,4 @@
 {
-  "presets": ["@vizworx/babel-preset"]
+  "presets": ["@vizworx/babel-preset"],
+  "plugins": ["@babel/transform-runtime"]
 }

@@ -4,6 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "25": "babel-node src/days/25/index.js",
     "test": "jest --verbose",
     "test:silent": "jest"
   },
@@ -18,6 +19,9 @@
   },
   "homepage": "https://github.com/jalovatt/advent-of-code-2019#readme",
   "dependencies": {
+    "@babel/node": "^7.7.7",
+    "@babel/plugin-transform-runtime": "^7.7.6",
+    "@babel/runtime": "^7.7.7",
     "@vizworx/babel-preset": "^1.1.0",
     "@vizworx/eslint-config": "^1.0.0",
     "babel-jest": "^24.9.0",
