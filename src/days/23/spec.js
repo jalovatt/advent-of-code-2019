@@ -1,5 +1,5 @@
 import loadText from '../../utilities/loadText';
-import { part1 } from '.';
+import { part1, part2 } from '.';
 
 const title = 'Category Six';
 
@@ -11,26 +11,18 @@ describe(`Day ${__filename.match(/\/([^/]+)\/spec/)[1]} - ${title}`, () => {
       const solution = part1(input);
 
       test(`${solution}`, () => {
-        expect(solution).toEqual(true);
+        expect(solution).toEqual(20665);
       });
     });
   });
 
-  xdescribe('Part 2', () => {
-    describe('Tests', () => {
-      test.each([
-        [1, 2],
-      ])('%p => %p', (given, expected) => {
-        expect(solve(given)).toEqual(expected);
+  describe('Part 2', () => {
+    describe('Solution', () => {
+      const solution = part2(input);
+
+      test(`${solution}`, () => {
+        expect(solution).toEqual(13358);
       });
     });
-
-    // describe('Solution', () => {
-    //   const solution = solve(input);
-
-    //   test(`${solution}`, () => {
-    //     expect(solution).toEqual(true);
-    //   });
-    // });
   });
 });
