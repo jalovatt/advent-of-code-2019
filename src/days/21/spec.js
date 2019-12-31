@@ -1,5 +1,5 @@
 import loadText from '../../utilities/loadText';
-import { solve } from '.';
+import { part1, part2 } from '.';
 
 const title = 'Springdroid Adventure';
 
@@ -7,38 +7,22 @@ const input = loadText('input.txt');
 
 describe(`Day ${__filename.match(/\/([^/]+)\/spec/)[1]} - ${title}`, () => {
   describe('Part 1', () => {
-    describe('Tests', () => {
-      test.each([
-        [1, 2],
-      ])('%p => %p', (given, expected) => {
-        expect(solve(given)).toEqual(expected);
+    describe('Solution', () => {
+      const solution = part1(input);
+
+      test(`${solution}`, () => {
+        expect(solution).toEqual(19348840);
       });
     });
-
-    // describe('Solution', () => {
-    //   const solution = solve(input);
-
-    //   test(`${solution}`, () => {
-    //     expect(solution).toEqual(true);
-    //   });
-    // });
   });
 
-  xdescribe('Part 2', () => {
-    describe('Tests', () => {
-      test.each([
-        [1, 2],
-      ])('%p => %p', (given, expected) => {
-        expect(solve(given)).toEqual(expected);
+  describe('Part 2', () => {
+    describe('Solution', () => {
+      const solution = part2(input);
+
+      test(`${solution}`, () => {
+        expect(solution).toEqual(1141857182);
       });
     });
-
-    // describe('Solution', () => {
-    //   const solution = solve(input);
-
-    //   test(`${solution}`, () => {
-    //     expect(solution).toEqual(true);
-    //   });
-    // });
   });
 });
